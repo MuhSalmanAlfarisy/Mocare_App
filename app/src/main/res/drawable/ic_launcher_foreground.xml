@@ -1,0 +1,132 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="480"
+    android:viewportHeight="480">
+
+    <!-- Outer hexagonal ring facets -->
+    <path
+        android:pathData="M 240 50 L 404.5 145 L 287.6 212.5 L 240 185 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="263.8"
+                android:startY="198.75"
+                android:endX="322.25"
+                android:endY="97.5"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF3d9468" />
+                <item android:offset="1" android:color="#FF1b5c3a" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 404.5 145 L 404.5 335 L 287.6 267.5 L 287.6 212.5 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="287.6"
+                android:startY="240"
+                android:endX="404.5"
+                android:endY="240"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFFFFFFF" />
+                <item android:offset="1" android:color="#FFccd4cf" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 404.5 335 L 240 430 L 240 295 L 287.6 267.5 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="263.8"
+                android:startY="281.25"
+                android:endX="322.25"
+                android:endY="382.5"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF54ad7a" />
+                <item android:offset="1" android:color="#FF2a7a50" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 240 430 L 75.5 335 L 192.4 267.5 L 240 295 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="216.2"
+                android:startY="281.25"
+                android:endX="157.75"
+                android:endY="382.5"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF2f7a52" />
+                <item android:offset="1" android:color="#FF123c26" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 75.5 335 L 75.5 145 L 192.4 212.5 L 192.4 267.5 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="192.4"
+                android:startY="240"
+                android:endX="75.5"
+                android:endY="240"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFF7F9F8" />
+                <item android:offset="1" android:color="#FFCFD6D1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <path
+        android:pathData="M 75.5 145 L 240 50 L 240 185 L 192.4 212.5 Z"
+        android:strokeColor="#4D0d3322"
+        android:strokeWidth="1.5">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="216.2"
+                android:startY="198.75"
+                android:endX="157.75"
+                android:endY="97.5"
+                android:type="linear">
+                <item android:offset="0" android:color="#FFb8ebcd" />
+                <item android:offset="1" android:color="#FF7bcb9d" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Central diamond gem without 'M' -->
+    <path
+        android:pathData="M 240 192 L 288 240 L 240 240 Z"
+        android:fillColor="#d7f2e8"
+        android:strokeColor="#400d3322"
+        android:strokeWidth="1.2" />
+    <path
+        android:pathData="M 240 192 L 192 240 L 240 240 Z"
+        android:fillColor="#8ed9ab"
+        android:strokeColor="#400d3322"
+        android:strokeWidth="1.2" />
+    <path
+        android:pathData="M 288 240 L 240 288 L 240 240 Z"
+        android:fillColor="#2f8858"
+        android:strokeColor="#400d3322"
+        android:strokeWidth="1.2" />
+    <path
+        android:pathData="M 192 240 L 240 288 L 240 240 Z"
+        android:fillColor="#1c5c3a"
+        android:strokeColor="#400d3322"
+        android:strokeWidth="1.2" />
+</vector>

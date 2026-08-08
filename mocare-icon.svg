@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <linearGradient id="gQ0" x1="263.8" y1="198.75" x2="322.25" y2="97.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3d9468"/>
+      <stop offset="1" stop-color="#1b5c3a"/>
+    </linearGradient>
+    <linearGradient id="gQ1" x1="287.6" y1="240" x2="404.5" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ccd4cf"/>
+    </linearGradient>
+    <linearGradient id="gQ2" x1="263.8" y1="281.25" x2="322.25" y2="382.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#54ad7a"/>
+      <stop offset="1" stop-color="#2a7a50"/>
+    </linearGradient>
+    <linearGradient id="gQ3" x1="216.2" y1="281.25" x2="157.75" y2="382.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2f7a52"/>
+      <stop offset="1" stop-color="#123c26"/>
+    </linearGradient>
+    <linearGradient id="gQ4" x1="192.4" y1="240" x2="75.5" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7f9f8"/>
+      <stop offset="1" stop-color="#cfd6d1"/>
+    </linearGradient>
+    <linearGradient id="gQ5" x1="216.2" y1="198.75" x2="157.75" y2="97.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b8ebcd"/>
+      <stop offset="1" stop-color="#7bcb9d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer hexagonal ring: 6 faceted trapezoid "gem" facets, alternating green / silver -->
+  <g stroke="#0d3322" stroke-opacity="0.3" stroke-width="1.5" stroke-linejoin="round">
+    <polygon points="240,50 404.5,145 287.6,212.5 240,185" fill="url(#gQ0)"/>
+    <polygon points="404.5,145 404.5,335 287.6,267.5 287.6,212.5" fill="url(#gQ1)"/>
+    <polygon points="404.5,335 240,430 240,295 287.6,267.5" fill="url(#gQ2)"/>
+    <polygon points="240,430 75.5,335 192.4,267.5 240,295" fill="url(#gQ3)"/>
+    <polygon points="75.5,335 75.5,145 192.4,212.5 192.4,267.5" fill="url(#gQ4)"/>
+    <polygon points="75.5,145 240,50 240,185 192.4,212.5" fill="url(#gQ5)"/>
+  </g>
+
+  <!-- Central diamond gem with M reveal -->
+  <g stroke="#0d3322" stroke-opacity="0.25" stroke-width="1.2" stroke-linejoin="round">
+    <polygon points="240,192 288,240 240,240" fill="#d7f2e8"/>
+    <polygon points="240,192 192,240 240,240" fill="#8ed9ab"/>
+    <polygon points="288,240 240,288 240,240" fill="#2f8858"/>
+    <polygon points="192,240 240,288 240,240" fill="#1c5c3a"/>
+  </g>
+  <polyline points="208,278 208,205 240,250 272,205 272,278" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
