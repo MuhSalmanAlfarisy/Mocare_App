@@ -8,4 +8,9 @@ object VehicleConfig {
     const val TANK_CAPACITY_LITERS = 5.5
     const val REFERENCE_FUEL_ECONOMY_KM_PER_LITER = 48.0
     const val TRANSMISSION = "Automatic / V-Matic"
+
+    // Fuel
+    const val FUEL_TYPE = "Pertamax"
+    const val FUEL_RON = 92
+    const val FUEL_PRICE_PER_LITER = 15950.0
 }

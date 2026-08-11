@@ -22,4 +22,5 @@ val appModule = module {
     single { get<MocareDatabase>().fuelRecordDao() }
     single { FuelRepository(get()) }
     viewModel { HomeViewModel(get()) }
+    viewModel { com.mocare.app.ui.viewmodel.HistoryViewModel(get()) }
 }

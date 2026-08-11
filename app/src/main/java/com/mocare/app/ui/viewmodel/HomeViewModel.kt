@@ -14,9 +14,9 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val currentOdometerKm: Int = 0,
-    val fuelLevelPercent: Int = 100,
+    val fuelLevelPercent: Int = -1,      // -1 = No Data / Empty
     val estimatedRangeKm: Int = 0,
-    val lastPricePerLiter: Double = 0.0,
+    val hasRefuelData: Boolean = false,
     val isLoading: Boolean = true
 )
 
@@ -31,50 +31,59 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
                 fuelRepository.getLatestRecord(),
                 fuelRepository.getLatestCheckpoint()
             ) { latestRecord, latestCheckpoint ->
-                val odometer = latestRecord?.odometerKm ?: 0
-                val fuelPercent = latestCheckpoint?.fuelLevelPercent ?: 100
-                val estimatedRange = (fuelPercent / 100.0 * VehicleConfig.TANK_CAPACITY_LITERS * VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER).toInt()
-                val lastPrice = latestRecord?.pricePerLiter ?: 0.0
+                if (latestRecord == null) {
+                    // Belum pernah refuel → No Data
+                    HomeUiState(
+                        currentOdometerKm = 0,
+                        fuelLevelPercent = -1,
+                        estimatedRangeKm = 0,
+                        hasRefuelData = false,
+                        isLoading = false
+                    )
+                } else {
+                    // Sudah pernah refuel
+                    val odometer = latestRecord.odometerKm
+                    val fuelPercent = latestCheckpoint?.fuelLevelPercent ?: 100
+                    val estimatedRange = (fuelPercent / 100.0
+                        * VehicleConfig.TANK_CAPACITY_LITERS
+                        * VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER).toInt()
 
-                HomeUiState(
-                    currentOdometerKm = odometer,
-                    fuelLevelPercent = fuelPercent,
-                    estimatedRangeKm = estimatedRange,
-                    lastPricePerLiter = lastPrice,
-                    isLoading = false
-                )
+                    HomeUiState(
+                        currentOdometerKm = odometer,
+                        fuelLevelPercent = fuelPercent,
+                        estimatedRangeKm = estimatedRange,
+                        hasRefuelData = true,
+                        isLoading = false
+                    )
+                }
             }.collect { state ->
                 _uiState.value = state
             }
         }
     }
 
-    fun saveRefuelRecord(odometerKm: Int, timestamp: Long) {
+    fun saveRefuelRecord(odometerKm: Int, nominalRupiah: Double, timestamp: Long) {
         viewModelScope.launch {
+            val addedLiters = nominalRupiah / VehicleConfig.FUEL_PRICE_PER_LITER
+
             val record = FuelRecordEntity(
                 timestamp = timestamp,
                 odometerKm = odometerKm,
-                liters = VehicleConfig.TANK_CAPACITY_LITERS,
-                pricePerLiter = _uiState.value.lastPricePerLiter,
-                totalCost = VehicleConfig.TANK_CAPACITY_LITERS * _uiState.value.lastPricePerLiter
+                liters = addedLiters,
+                pricePerLiter = VehicleConfig.FUEL_PRICE_PER_LITER,
+                totalCost = nominalRupiah
             )
             fuelRepository.insertRecord(record)
-            // Reset fuel to 100% after refuel
-            fuelRepository.insertCheckpoint(
-                FuelCheckpointEntity(fuelLevelPercent = 100, timestamp = timestamp)
-            )
-        }
-    }
+            
+            // Calculate new fuel percentage
+            val currentPercent = _uiState.value.fuelLevelPercent.coerceAtLeast(0)
+            val currentLiters = (currentPercent / 100.0) * VehicleConfig.TANK_CAPACITY_LITERS
+            val newLiters = currentLiters + addedLiters
+            val newPercent = ((newLiters / VehicleConfig.TANK_CAPACITY_LITERS) * 100).toInt().coerceAtMost(100)
 
-    fun saveFuelUsage(liters: Double, pricePerLiter: Double) {
-        viewModelScope.launch {
-            val record = FuelRecordEntity(
-                odometerKm = _uiState.value.currentOdometerKm,
-                liters = liters,
-                pricePerLiter = pricePerLiter,
-                totalCost = liters * pricePerLiter
+            fuelRepository.insertCheckpoint(
+                FuelCheckpointEntity(fuelLevelPercent = newPercent, timestamp = timestamp)
             )
-            fuelRepository.insertRecord(record)
         }
     }
 

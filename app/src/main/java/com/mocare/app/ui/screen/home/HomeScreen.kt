@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mocare.app.data.VehicleConfig
 import com.mocare.app.ui.theme.ActionIconBlueBg
 import com.mocare.app.ui.theme.ActionIconBlueTint
 import com.mocare.app.ui.theme.ActionIconGreenBg
@@ -72,7 +75,6 @@ import com.mocare.app.ui.theme.BottomNavActiveContent
 import com.mocare.app.ui.theme.BottomNavInactiveContent
 import com.mocare.app.ui.theme.CardBorderColor
 import com.mocare.app.ui.theme.ChevronGray
-import com.mocare.app.ui.theme.EstLeftGreen
 import com.mocare.app.ui.theme.FuelAmber
 import com.mocare.app.ui.theme.FuelRed
 import com.mocare.app.ui.theme.GaugeBorder
@@ -87,19 +89,25 @@ import com.mocare.app.ui.theme.TextDarkNavy
 import com.mocare.app.ui.viewmodel.HomeViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.text.NumberFormat
+import java.util.Locale
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
+import java.util.Calendar
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import androidx.compose.ui.platform.LocalContext
 
 // Helper: fuel level color based on percentage
 private fun fuelColor(percent: Int): Color = when {
-    percent >= 80 -> GaugeFill           // Emerald Green
-    percent >= 50 -> Color(0xFF4CAF50)   // Green
-    percent >= 20 -> FuelAmber           // Amber/Orange
-    else -> FuelRed                      // Red / Critical
+    percent < 0 -> Color(0xFFBDBDBD)     // No Data / Gray
+    percent >= 80 -> GaugeFill            // Emerald Green
+    percent >= 50 -> Color(0xFF4CAF50)    // Green
+    percent >= 20 -> FuelAmber            // Amber/Orange
+    else -> FuelRed                       // Red / Critical
 }
 
 private fun fuelBorderColor(percent: Int): Color = when {
+    percent < 0 -> Color(0xFFE0E0E0)     // No Data / Gray
     percent >= 80 -> GaugeBorder
     percent >= 50 -> Color(0xFFA5D6A7)
     percent >= 20 -> Color(0xFFFFCC80)
@@ -109,20 +117,29 @@ private fun fuelBorderColor(percent: Int): Color = when {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = koinViewModel()
+    viewModel: HomeViewModel = koinViewModel(),
+    onProfileClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     var showRefuelSheet by remember { mutableStateOf(false) }
-    var showFuelUsageSheet by remember { mutableStateOf(false) }
+    var showFuelInfoSheet by remember { mutableStateOf(false) }
     var showCheckpointSheet by remember { mutableStateOf(false) }
 
     val numberFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
-    val displayKm = remember(uiState.currentOdometerKm) { numberFormat.format(uiState.currentOdometerKm) }
+
+    val hasData = uiState.hasRefuelData
+    val noData = !hasData
 
     Scaffold(
         containerColor = PageBackground,
-        bottomBar = { MocareBottomNavigationBar() }
+        bottomBar = { 
+            MocareBottomNavigationBar(
+                currentRoute = "home",
+                onNavigateHistory = onHistoryClick
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -130,12 +147,12 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Bar - Top Right "MOCARE"
+            // Header Bar - Top Left "MOCARE", Top Right Profile Icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, end = 24.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.End,
+                    .padding(top = 12.dp, start = 24.dp, end = 16.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -146,6 +163,14 @@ fun HomeScreen(
                     letterSpacing = 2.sp,
                     color = MocareBrandTeal
                 )
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = MocareBrandTeal,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             // Card 1: CURRENT MILEAGE
@@ -172,23 +197,33 @@ fun HomeScreen(
                         color = HeaderLabelGray
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
+                    if (noData) {
+                        // No Data state
                         Text(
-                            text = displayKm,
+                            text = "--",
                             fontSize = 38.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MileageGreen
+                            color = SubtitleGray
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "KM",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MileageGreen
-                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = numberFormat.format(uiState.currentOdometerKm),
+                                fontSize = 38.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MileageGreen
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "KM",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MileageGreen
+                            )
+                        }
                     }
                 }
             }
@@ -221,41 +256,70 @@ fun HomeScreen(
                             color = HeaderLabelGray
                         )
                         Spacer(modifier = Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.Bottom) {
+
+                        if (noData) {
+                            // No Data state
                             Text(
-                                text = "${uiState.fuelLevelPercent}",
-                                fontSize = 34.sp,
+                                text = "EMPTY",
+                                fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextDarkNavy
+                                color = SubtitleGray
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "%",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextDarkNavy,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.LocalGasStation,
-                                contentDescription = null,
-                                tint = fuelColor(uiState.fuelLevelPercent),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Est. ${uiState.estimatedRangeKm} KM left",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = fuelColor(uiState.fuelLevelPercent)
-                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalGasStation,
+                                    contentDescription = null,
+                                    tint = SubtitleGray,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "No Data",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SubtitleGray
+                                )
+                            }
+                        } else {
+                            // Has data state
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    text = "${uiState.fuelLevelPercent}",
+                                    fontSize = 34.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDarkNavy
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "%",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDarkNavy,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocalGasStation,
+                                    contentDescription = null,
+                                    tint = fuelColor(uiState.fuelLevelPercent),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Est. ${uiState.estimatedRangeKm} KM left",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = fuelColor(uiState.fuelLevelPercent)
+                                )
+                            }
                         }
                     }
 
                     // Vertical Fuel Gauge
+                    val gaugePercent = if (noData) 0 else uiState.fuelLevelPercent
                     Box(
                         modifier = Modifier
                             .width(34.dp)
@@ -264,15 +328,17 @@ fun HomeScreen(
                             .background(GaugeContainerBg)
                             .border(1.5.dp, fuelBorderColor(uiState.fuelLevelPercent), CircleShape)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .fillMaxHeight(uiState.fuelLevelPercent / 100f)
-                                .padding(3.dp)
-                                .clip(CircleShape)
-                                .background(fuelColor(uiState.fuelLevelPercent))
-                        )
+                        if (gaugePercent > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(gaugePercent / 100f)
+                                    .padding(3.dp)
+                                    .clip(CircleShape)
+                                    .background(fuelColor(uiState.fuelLevelPercent))
+                            )
+                        }
                     }
                 }
             }
@@ -286,6 +352,7 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // 1. New Refuel — always enabled
                 ActionCardItem(
                     icon = Icons.Default.Add,
                     iconBgColor = ActionIconGreenBg,
@@ -294,22 +361,76 @@ fun HomeScreen(
                     subtitle = "+ New Refuel",
                     onClick = { showRefuelSheet = true }
                 )
+
+                // 2. Fuel Info — always enabled (info only)
                 ActionCardItem(
                     icon = Icons.Default.TrendingUp,
                     iconBgColor = ActionIconMintBg,
                     iconTintColor = ActionIconMintTint,
                     title = "Bensin yang Anda Pakai",
-                    subtitle = "Fuel Usage Statistics",
-                    onClick = { showFuelUsageSheet = true }
+                    subtitle = "${VehicleConfig.FUEL_TYPE} (RON ${VehicleConfig.FUEL_RON})",
+                    onClick = { showFuelInfoSheet = true }
                 )
-                ActionCardItem(
-                    icon = Icons.Default.Flag,
-                    iconBgColor = ActionIconBlueBg,
-                    iconTintColor = ActionIconBlueTint,
-                    title = "Bensin Checkpoint",
-                    subtitle = "Mark Fuel Level",
-                    onClick = { showCheckpointSheet = true }
-                )
+
+                // 3. Checkpoint — disabled jika belum pernah refuel
+                if (hasData) {
+                    ActionCardItem(
+                        icon = Icons.Default.Flag,
+                        iconBgColor = ActionIconBlueBg,
+                        iconTintColor = ActionIconBlueTint,
+                        title = "Bensin Checkpoint",
+                        subtitle = "Mark Fuel Level",
+                        onClick = { showCheckpointSheet = true }
+                    )
+                } else {
+                    // Disabled state
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(0.45f),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, CardBorderColor)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(ActionIconBlueBg),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Flag,
+                                    contentDescription = null,
+                                    tint = ActionIconBlueTint,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Bensin Checkpoint",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDarkNavy
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Isi bensin dulu untuk mengaktifkan",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = SubtitleGray
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -322,27 +443,22 @@ fun HomeScreen(
     if (showRefuelSheet) {
         RefuelBottomSheet(
             onDismiss = { showRefuelSheet = false },
-            onSave = { odometerKm, timestamp ->
-                viewModel.saveRefuelRecord(odometerKm, timestamp)
+            onSave = { odometerKm, nominalRupiah, timestamp ->
+                viewModel.saveRefuelRecord(odometerKm, nominalRupiah, timestamp)
                 showRefuelSheet = false
             }
         )
     }
 
-    // 2. Fuel Usage Modal
-    if (showFuelUsageSheet) {
-        FuelUsageBottomSheet(
-            currentPrice = uiState.lastPricePerLiter,
-            onDismiss = { showFuelUsageSheet = false },
-            onSave = { liters, price ->
-                viewModel.saveFuelUsage(liters, price)
-                showFuelUsageSheet = false
-            }
+    // 2. Fuel Info Modal (informational only)
+    if (showFuelInfoSheet) {
+        FuelInfoBottomSheet(
+            onDismiss = { showFuelInfoSheet = false }
         )
     }
 
     // 3. Checkpoint Modal
-    if (showCheckpointSheet) {
+    if (showCheckpointSheet && hasData) {
         CheckpointBottomSheet(
             currentPercent = uiState.fuelLevelPercent,
             onDismiss = { showCheckpointSheet = false },
@@ -361,15 +477,25 @@ fun HomeScreen(
 @Composable
 fun RefuelBottomSheet(
     onDismiss: () -> Unit,
-    onSave: (odometerKm: Int, timestamp: Long) -> Unit
+    onSave: (odometerKm: Int, nominalRupiah: Double, timestamp: Long) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
+    
     var odometerInput by remember { mutableStateOf("") }
-    val currentTimestamp = remember { System.currentTimeMillis() }
+    var nominalInput by remember { mutableStateOf("") }
+    
+    // Timestamp State
+    var selectedTimestamp by remember { mutableStateOf(System.currentTimeMillis()) }
+    val calendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
-    val displayDate = remember { dateFormat.format(Date(currentTimestamp)) }
 
-    val isValid = odometerInput.toIntOrNull() != null && odometerInput.toIntOrNull()!! > 0
+    val odometerValid = odometerInput.toIntOrNull() != null && odometerInput.toIntOrNull()!! > 0
+    val nominalValid = nominalInput.toDoubleOrNull() != null && nominalInput.toDoubleOrNull()!! > 0
+    val isValid = odometerValid && nominalValid
+
+    val nominalValue = nominalInput.toDoubleOrNull() ?: 0.0
+    val calculatedLiters = if (nominalValue > 0) nominalValue / VehicleConfig.FUEL_PRICE_PER_LITER else 0.0
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -402,7 +528,7 @@ fun RefuelBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Timestamp display
+            // Timestamp Input
             Text(
                 text = "WAKTU PENGISIAN",
                 fontSize = 11.sp,
@@ -412,12 +538,84 @@ fun RefuelBottomSheet(
                 color = HeaderLabelGray
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = displayDate,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextDarkNavy
+            OutlinedTextField(
+                value = dateFormat.format(Date(selectedTimestamp)),
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MocareBrandTeal,
+                    unfocusedBorderColor = CardBorderColor
+                ),
+                trailingIcon = {
+                    Text(
+                        text = "Ubah",
+                        color = MocareBrandTeal,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .clickable {
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        TimePickerDialog(
+                                            context,
+                                            { _, hourOfDay, minute ->
+                                                val newCal = Calendar.getInstance()
+                                                newCal.set(year, month, dayOfMonth, hourOfDay, minute)
+                                                selectedTimestamp = newCal.timeInMillis
+                                            },
+                                            calendar.get(Calendar.HOUR_OF_DAY),
+                                            calendar.get(Calendar.MINUTE),
+                                            true
+                                        ).show()
+                                    },
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }
+                    )
+                }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Nominal Rupiah input
+            Text(
+                text = "NOMINAL (RP)",
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = HeaderLabelGray
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedTextField(
+                value = nominalInput,
+                onValueChange = { nominalInput = it.filter { c -> c.isDigit() } },
+                placeholder = { Text("Contoh: 15000", color = SubtitleGray) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MocareBrandTeal,
+                    unfocusedBorderColor = CardBorderColor,
+                    cursorColor = MocareBrandTeal
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            if (calculatedLiters > 0) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Anda telah mengisi ±${String.format(Locale("id", "ID"), "%.2f", calculatedLiters)} liter Pertamax.",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MileageGreen
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -452,7 +650,8 @@ fun RefuelBottomSheet(
             Button(
                 onClick = {
                     val km = odometerInput.toIntOrNull() ?: return@Button
-                    onSave(km, currentTimestamp)
+                    val nominal = nominalInput.toDoubleOrNull() ?: return@Button
+                    onSave(km, nominal, selectedTimestamp)
                 },
                 enabled = isValid,
                 modifier = Modifier
@@ -476,22 +675,17 @@ fun RefuelBottomSheet(
 }
 
 // ============================================================
-// BOTTOM SHEET: Fuel Usage
+// BOTTOM SHEET: Fuel Info (Informational)
 // ============================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FuelUsageBottomSheet(
-    currentPrice: Double,
-    onDismiss: () -> Unit,
-    onSave: (liters: Double, pricePerLiter: Double) -> Unit
+fun FuelInfoBottomSheet(
+    onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var priceInput by remember { mutableStateOf(if (currentPrice > 0) currentPrice.toInt().toString() else "") }
-    var litersInput by remember { mutableStateOf("") }
-
-    val priceValid = priceInput.toDoubleOrNull() != null && priceInput.toDoubleOrNull()!! > 0
-    val litersValid = litersInput.toDoubleOrNull() != null && litersInput.toDoubleOrNull()!! > 0
-    val isValid = priceValid && litersValid
+    val priceFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+    val fullTankCost = VehicleConfig.TANK_CAPACITY_LITERS * VehicleConfig.FUEL_PRICE_PER_LITER
+    val estRange = (VehicleConfig.TANK_CAPACITY_LITERS * VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER).toInt()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -521,84 +715,41 @@ fun FuelUsageBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "HARGA PER LITER (RP)",
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = HeaderLabelGray
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = priceInput,
-                onValueChange = { priceInput = it.filter { c -> c.isDigit() } },
-                placeholder = { Text("Contoh: 10000", color = SubtitleGray) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MocareBrandTeal,
-                    unfocusedBorderColor = CardBorderColor,
-                    cursorColor = MocareBrandTeal
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "JUMLAH LITER",
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = HeaderLabelGray
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            OutlinedTextField(
-                value = litersInput,
-                onValueChange = { litersInput = it.filter { c -> c.isDigit() || c == '.' } },
-                placeholder = { Text("Contoh: 3.5", color = SubtitleGray) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MocareBrandTeal,
-                    unfocusedBorderColor = CardBorderColor,
-                    cursorColor = MocareBrandTeal
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            Button(
-                onClick = {
-                    val liters = litersInput.toDoubleOrNull() ?: return@Button
-                    val price = priceInput.toDoubleOrNull() ?: return@Button
-                    onSave(liters, price)
-                },
-                enabled = isValid,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MocareBrandTeal,
-                    disabledContainerColor = CardBorderColor
-                )
-            ) {
-                Text(
-                    text = "Simpan",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            FuelInfoRow("JENIS BENSIN", VehicleConfig.FUEL_TYPE)
+            Spacer(modifier = Modifier.height(14.dp))
+            FuelInfoRow("RON", "${VehicleConfig.FUEL_RON}")
+            Spacer(modifier = Modifier.height(14.dp))
+            FuelInfoRow("HARGA PER LITER", "Rp${priceFormat.format(VehicleConfig.FUEL_PRICE_PER_LITER.toInt())}")
+            Spacer(modifier = Modifier.height(14.dp))
+            FuelInfoRow("KAPASITAS TANGKI", "${VehicleConfig.TANK_CAPACITY_LITERS} L")
+            Spacer(modifier = Modifier.height(14.dp))
+            FuelInfoRow("ESTIMASI FULL TANK", "Rp${priceFormat.format(fullTankCost.toInt())}")
+            Spacer(modifier = Modifier.height(14.dp))
+            FuelInfoRow("ESTIMASI JARAK FULL", "$estRange KM")
         }
+    }
+}
+
+@Composable
+private fun FuelInfoRow(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            color = HeaderLabelGray
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextDarkNavy
+        )
     }
 }
 
@@ -716,7 +867,7 @@ fun CheckpointBottomSheet(
 }
 
 // ============================================================
-// REUSED COMPONENTS (unchanged from original design)
+// REUSED COMPONENTS
 // ============================================================
 @Composable
 fun ActionCardItem(
@@ -782,7 +933,11 @@ fun ActionCardItem(
 }
 
 @Composable
-fun MocareBottomNavigationBar() {
+fun MocareBottomNavigationBar(
+    currentRoute: String = "home",
+    onNavigateHome: () -> Unit = {},
+    onNavigateHistory: () -> Unit = {}
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -796,17 +951,20 @@ fun MocareBottomNavigationBar() {
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Home / Refuel Menu
+            val isHome = currentRoute == "home"
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(BottomNavActiveBg)
+                    .background(if (isHome) BottomNavActiveBg else Color.Transparent)
+                    .clickable(enabled = !isHome) { onNavigateHome() }
                     .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.LocalGasStation,
                         contentDescription = "Refuel",
-                        tint = BottomNavActiveContent,
+                        tint = if (isHome) BottomNavActiveContent else BottomNavInactiveContent,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
@@ -814,14 +972,16 @@ fun MocareBottomNavigationBar() {
                         text = "Refuel",
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = BottomNavActiveContent
+                        fontWeight = if (isHome) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isHome) BottomNavActiveContent else BottomNavInactiveContent
                     )
                 }
             }
+
+            // Stats Menu (Disabled placeholder)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).alpha(0.5f)
             ) {
                 Icon(
                     imageVector = Icons.Default.TrendingUp,
@@ -838,24 +998,32 @@ fun MocareBottomNavigationBar() {
                     color = BottomNavInactiveContent
                 )
             }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+
+            // History Menu
+            val isHistory = currentRoute == "history"
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (isHistory) BottomNavActiveBg else Color.Transparent)
+                    .clickable(enabled = !isHistory) { onNavigateHistory() }
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.History,
-                    contentDescription = "History",
-                    tint = BottomNavInactiveContent,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "History",
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BottomNavInactiveContent
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = "History",
+                        tint = if (isHistory) BottomNavActiveContent else BottomNavInactiveContent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "History",
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isHistory) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isHistory) BottomNavActiveContent else BottomNavInactiveContent
+                    )
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 class FuelRepository(private val dao: FuelRecordDao) {
     fun getAllRecords(): Flow<List<FuelRecordEntity>> = dao.getAllRecords()
     fun getLatestRecord(): Flow<FuelRecordEntity?> = dao.getLatestRecord()
+    fun getAllCheckpoints(): Flow<List<FuelCheckpointEntity>> = dao.getAllCheckpoints()
     fun getLatestCheckpoint(): Flow<FuelCheckpointEntity?> = dao.getLatestCheckpoint()
     suspend fun insertRecord(record: FuelRecordEntity) = dao.insertRecord(record)
     suspend fun insertCheckpoint(checkpoint: FuelCheckpointEntity) = dao.insertCheckpoint(checkpoint)

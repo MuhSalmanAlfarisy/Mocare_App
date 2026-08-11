@@ -23,4 +23,7 @@ interface FuelRecordDao {
 
     @Query("SELECT * FROM fuel_checkpoints ORDER BY timestamp DESC LIMIT 1")
     fun getLatestCheckpoint(): Flow<FuelCheckpointEntity?>
+
+    @Query("SELECT * FROM fuel_checkpoints ORDER BY timestamp DESC")
+    fun getAllCheckpoints(): Flow<List<FuelCheckpointEntity>>
 }
