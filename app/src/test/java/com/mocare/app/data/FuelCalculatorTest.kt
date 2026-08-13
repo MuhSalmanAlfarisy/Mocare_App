@@ -11,10 +11,10 @@ class FuelCalculatorTest {
     private val tank = VehicleConfig.TANK_CAPACITY_LITERS
     private val fallbackEfficiency = VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER
 
-    private fun refuel(timestamp: Long, odometerKm: Int, liters: Double) =
+    private fun refuel(timestamp: Long, odometerKm: Double, liters: Double) =
         FuelEvent.Refuel(timestamp, odometerKm, liters, liters * VehicleConfig.FUEL_PRICE_PER_LITER)
 
-    private fun checkpoint(timestamp: Long, odometerKm: Int) =
+    private fun checkpoint(timestamp: Long, odometerKm: Double) =
         FuelEvent.Checkpoint(timestamp, odometerKm)
 
     @Test
@@ -24,18 +24,18 @@ class FuelCalculatorTest {
         assertFalse(state.hasData)
         assertEquals(-1, state.remainingPercent)
         assertEquals(0, state.estimatedRangeKm)
-        assertEquals(0, state.currentOdometerKm)
+        assertEquals(0.0, state.currentOdometerKm, 0.0001)
     }
 
     @Test
     fun `refuel tunggal memakai efisiensi fallback`() {
-        val state = FuelCalculator.calculate(listOf(refuel(1_000L, 380_000, 1.25)))
+        val state = FuelCalculator.calculate(listOf(refuel(1_000L, 380_000.0, 1.25)))
 
         assertTrue(state.hasData)
         assertFalse(state.isEfficiencyMeasured)
         assertEquals(fallbackEfficiency, state.efficiencyKmPerLiter, 0.0001)
         assertEquals(1.25, state.remainingLiters, 0.0001)
-        assertEquals(380_000, state.currentOdometerKm)
+        assertEquals(380_000.0, state.currentOdometerKm, 0.0001)
         // 1.25 / 5.5 * 100 = 22.7 -> 23%
         assertEquals(23, state.remainingPercent)
         assertEquals((1.25 * fallbackEfficiency).toInt(), state.estimatedRangeKm)
@@ -44,31 +44,31 @@ class FuelCalculatorTest {
     @Test
     fun `checkpoint mengurangi bensin sesuai jarak tempuh`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 2.0),
-            checkpoint(2_000L, 380_048)   // 48 KM pada 48 km per liter = 1 liter terpakai
+            refuel(1_000L, 380_000.0, 2.0),
+            checkpoint(2_000L, 380_048.0)   // 48 KM pada 48 km per liter = 1 liter terpakai
         )
 
         val state = FuelCalculator.calculate(events)
 
         assertEquals(1.0, state.remainingLiters, 0.0001)
-        assertEquals(380_048, state.currentOdometerKm)
+        assertEquals(380_048.0, state.currentOdometerKm, 0.0001)
     }
 
     @Test
     fun `checkpoint memperbarui odometer terkini`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 5.0),
-            checkpoint(2_000L, 380_100)
+            refuel(1_000L, 380_000.0, 5.0),
+            checkpoint(2_000L, 380_100.0)
         )
 
-        assertEquals(380_100, FuelCalculator.calculate(events).currentOdometerKm)
+        assertEquals(380_100.0, FuelCalculator.calculate(events).currentOdometerKm, 0.0001)
     }
 
     @Test
     fun `bensin habis di-clamp ke nol tanpa nilai negatif`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 1.0),
-            checkpoint(2_000L, 385_000)   // jarak jauh melebihi kapasitas bensin
+            refuel(1_000L, 380_000.0, 1.0),
+            checkpoint(2_000L, 385_000.0)   // jarak jauh melebihi kapasitas bensin
         )
 
         val state = FuelCalculator.calculate(events)
@@ -82,8 +82,8 @@ class FuelCalculatorTest {
     @Test
     fun `pengisian melebihi kapasitas di-clamp ke kapasitas tangki`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 4.0),
-            refuel(2_000L, 380_000, 4.0)
+            refuel(1_000L, 380_000.0, 4.0),
+            refuel(2_000L, 380_000.0, 4.0)
         )
 
         assertEquals(tank, FuelCalculator.calculate(events).remainingLiters, 0.0001)
@@ -91,14 +91,14 @@ class FuelCalculatorTest {
 
     @Test
     fun `efisiensi belum terukur dengan satu refuel`() {
-        assertNull(FuelCalculator.measureEfficiency(listOf(refuel(1_000L, 380_000, 2.0))))
+        assertNull(FuelCalculator.measureEfficiency(listOf(refuel(1_000L, 380_000.0, 2.0))))
     }
 
     @Test
     fun `efisiensi terukur dari dua refuel dengan metode tank to tank`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 2.0),
-            refuel(2_000L, 380_100, 2.0)   // 100 KM / 2 L = 50 km per liter
+            refuel(1_000L, 380_000.0, 2.0),
+            refuel(2_000L, 380_100.0, 2.0)   // 100 KM / 2 L = 50 km per liter
         )
 
         val measured = FuelCalculator.measureEfficiency(events)
@@ -113,11 +113,11 @@ class FuelCalculatorTest {
     fun `efisiensi merata-ratakan interval terakhir sesuai sample window`() {
         // Interval: 100/2=50, 120/2=60, 80/2=40, 90/2=45
         val events = listOf(
-            refuel(1_000L, 380_000, 2.0),
-            refuel(2_000L, 380_100, 2.0),
-            refuel(3_000L, 380_220, 2.0),
-            refuel(4_000L, 380_300, 2.0),
-            refuel(5_000L, 380_390, 2.0)
+            refuel(1_000L, 380_000.0, 2.0),
+            refuel(2_000L, 380_100.0, 2.0),
+            refuel(3_000L, 380_220.0, 2.0),
+            refuel(4_000L, 380_300.0, 2.0),
+            refuel(5_000L, 380_390.0, 2.0)
         )
 
         // Window 3 terakhir: (60 + 40 + 45) / 3 = 48.333...
@@ -131,9 +131,9 @@ class FuelCalculatorTest {
     @Test
     fun `interval dengan odometer mundur diabaikan saat mengukur efisiensi`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 2.0),
-            refuel(2_000L, 379_000, 2.0),   // odometer mundur, interval tidak valid
-            refuel(3_000L, 379_100, 2.0)    // 100 / 2 = 50
+            refuel(1_000L, 380_000.0, 2.0),
+            refuel(2_000L, 379_000.0, 2.0),   // odometer mundur, interval tidak valid
+            refuel(3_000L, 379_100.0, 2.0)    // 100 / 2 = 50
         )
 
         assertEquals(50.0, FuelCalculator.measureEfficiency(events)!!, 0.0001)
@@ -141,32 +141,32 @@ class FuelCalculatorTest {
 
     @Test
     fun `checkpoint tanpa refuel tidak dianggap punya data`() {
-        val state = FuelCalculator.calculate(listOf(checkpoint(1_000L, 380_000)))
+        val state = FuelCalculator.calculate(listOf(checkpoint(1_000L, 380_000.0)))
 
         assertFalse(state.hasData)
-        assertEquals(380_000, state.currentOdometerKm)
+        assertEquals(380_000.0, state.currentOdometerKm, 0.0001)
         assertEquals(0.0, state.remainingLiters, 0.0001)
     }
 
     @Test
     fun `event diurutkan berdasarkan timestamp meski input tidak berurutan`() {
         val outOfOrder = listOf(
-            checkpoint(3_000L, 380_048),
-            refuel(1_000L, 380_000, 2.0)
+            checkpoint(3_000L, 380_048.0),
+            refuel(1_000L, 380_000.0, 2.0)
         )
 
         val state = FuelCalculator.calculate(outOfOrder)
 
         assertEquals(1.0, state.remainingLiters, 0.0001)
-        assertEquals(380_048, state.currentOdometerKm)
+        assertEquals(380_048.0, state.currentOdometerKm, 0.0001)
     }
 
     @Test
     fun `refuel setelah bensin habis mengisi ulang dari nol`() {
         val events = listOf(
-            refuel(1_000L, 380_000, 1.0),
-            checkpoint(2_000L, 385_000),        // bensin habis
-            refuel(3_000L, 385_000, 3.0)        // isi ulang tanpa jarak tambahan
+            refuel(1_000L, 380_000.0, 1.0),
+            checkpoint(2_000L, 385_000.0),        // bensin habis
+            refuel(3_000L, 385_000.0, 3.0)        // isi ulang tanpa jarak tambahan
         )
 
         assertEquals(3.0, FuelCalculator.calculate(events).remainingLiters, 0.0001)

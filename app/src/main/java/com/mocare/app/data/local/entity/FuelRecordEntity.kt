@@ -8,7 +8,7 @@ data class FuelRecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val timestamp: Long = System.currentTimeMillis(),
-    val odometerKm: Int,
+    val odometerKm: Double,
     val liters: Double,
     val pricePerLiter: Double,
     val totalCost: Double

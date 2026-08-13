@@ -27,7 +27,7 @@
   </defs>
 
   <!-- Outer hexagonal ring: 6 faceted trapezoid "gem" facets, alternating green / silver -->
-  <g stroke="#0d3322" stroke-opacity="0.3" stroke-width="1.5" stroke-linejoin="round">
+  <g>
     <polygon points="240,50 404.5,145 287.6,212.5 240,185" fill="url(#gQ0)"/>
     <polygon points="404.5,145 404.5,335 287.6,267.5 287.6,212.5" fill="url(#gQ1)"/>
     <polygon points="404.5,335 240,430 240,295 287.6,267.5" fill="url(#gQ2)"/>
@@ -37,7 +37,7 @@
   </g>
 
   <!-- Central diamond gem with M reveal -->
-  <g stroke="#0d3322" stroke-opacity="0.25" stroke-width="1.2" stroke-linejoin="round">
+  <g>
     <polygon points="240,192 288,240 240,240" fill="#d7f2e8"/>
     <polygon points="240,192 192,240 240,240" fill="#8ed9ab"/>
     <polygon points="288,240 240,288 240,240" fill="#2f8858"/>

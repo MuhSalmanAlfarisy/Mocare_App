@@ -61,6 +61,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mocare.app.R
 import com.mocare.app.data.VehicleConfig
 import com.mocare.app.ui.theme.ActionIconBlueBg
 import com.mocare.app.ui.theme.ActionIconBlueTint
@@ -93,6 +95,28 @@ import java.util.Calendar
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.ui.platform.LocalContext
+import com.mocare.app.ui.util.CurrencyVisualTransformation
+
+// Helper: parse odometer input yang mungkin mengandung comma/dot campuran
+private fun String.parseOdometerToDouble(): Double? {
+    val clean = this.filter { it.isDigit() || it == '.' || it == ',' }
+    if (clean.isEmpty()) return null
+    val lastComma = clean.lastIndexOf(',')
+    val lastDot = clean.lastIndexOf('.')
+    return when {
+        lastComma > lastDot && lastDot != -1 -> clean.replace(".", "").replace(",", ".").toDoubleOrNull()
+        lastDot > lastComma && lastComma != -1 -> clean.replace(",", "").toDoubleOrNull()
+        lastComma != -1 -> clean.replace(",", ".").toDoubleOrNull()
+        else -> {
+            val raw = clean.toDoubleOrNull()
+            if (raw != null && !clean.contains(".") && !clean.contains(",")) {
+                raw / 10.0 // Anggap digit terakhir adalah desimal jika murni angka
+            } else {
+                raw
+            }
+        }
+    }
+}
 
 // Helper: fuel level color based on percentage
 private fun fuelColor(percent: Int): Color = when {
@@ -116,7 +140,8 @@ private fun fuelBorderColor(percent: Int): Color = when {
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onProfileClick: () -> Unit = {},
-    onHistoryClick: () -> Unit = {}
+    onHistoryClick: () -> Unit = {},
+    onStatsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -124,7 +149,11 @@ fun HomeScreen(
     var showFuelInfoSheet by remember { mutableStateOf(false) }
     var showCheckpointSheet by remember { mutableStateOf(false) }
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+    val numberFormat = remember { 
+        NumberFormat.getNumberInstance(Locale("id", "ID")).apply {
+            maximumFractionDigits = 1
+        }
+    }
 
     val hasData = uiState.hasRefuelData
     val noData = !hasData
@@ -134,7 +163,8 @@ fun HomeScreen(
         bottomBar = { 
             MocareBottomNavigationBar(
                 currentRoute = "home",
-                onNavigateHistory = onHistoryClick
+                onNavigateHistory = onHistoryClick,
+                onNavigateStats = onStatsClick
             )
         }
     ) { innerPadding ->
@@ -144,7 +174,7 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Bar - Top Left "MOCARE", Top Right Profile Icon
+            // Header Bar - Top Left MOCARE, Top Right Profile Icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,7 +183,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "MOCARE",
+                    text = stringResource(R.string.app_name).uppercase(),
                     fontSize = 13.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -163,7 +193,7 @@ fun HomeScreen(
                 IconButton(onClick = onProfileClick) {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
+                        contentDescription = stringResource(R.string.cd_profile),
                         tint = MocareBrandTeal,
                         modifier = Modifier.size(24.dp)
                     )
@@ -186,7 +216,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "CURRENT MILEAGE",
+                        text = stringResource(R.string.current_mileage),
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -215,7 +245,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "KM",
+                                text = stringResource(R.string.km),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MileageGreen
@@ -245,7 +275,7 @@ fun HomeScreen(
                 ) {
                     Column {
                         Text(
-                            text = "FUEL LEVEL",
+                            text = stringResource(R.string.fuel_level),
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
@@ -257,7 +287,7 @@ fun HomeScreen(
                         if (noData) {
                             // No Data state
                             Text(
-                                text = "EMPTY",
+                                text = stringResource(R.string.empty),
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SubtitleGray
@@ -272,7 +302,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "No Data",
+                                    text = stringResource(R.string.no_data),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = SubtitleGray
@@ -306,7 +336,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Est. ${uiState.estimatedRangeKm} KM left",
+                                    text = stringResource(R.string.est_range_left, uiState.estimatedRangeKm.toString()),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = fuelColor(uiState.fuelLevelPercent)
@@ -354,8 +384,8 @@ fun HomeScreen(
                     icon = Icons.Default.Add,
                     iconBgColor = ActionIconGreenBg,
                     iconTintColor = Color.White,
-                    title = "Apakah Anda Baru Isi Bensin?",
-                    subtitle = "+ New Refuel",
+                    title = stringResource(R.string.new_refuel),
+                    subtitle = stringResource(R.string.action_refuel_subtitle),
                     onClick = { showRefuelSheet = true }
                 )
 
@@ -364,7 +394,7 @@ fun HomeScreen(
                     icon = Icons.Default.TrendingUp,
                     iconBgColor = ActionIconMintBg,
                     iconTintColor = ActionIconMintTint,
-                    title = "Bensin yang Anda Pakai",
+                    title = stringResource(R.string.fuel_info_title),
                     subtitle = "${VehicleConfig.FUEL_TYPE} (RON ${VehicleConfig.FUEL_RON})",
                     onClick = { showFuelInfoSheet = true }
                 )
@@ -375,8 +405,8 @@ fun HomeScreen(
                         icon = Icons.Default.Flag,
                         iconBgColor = ActionIconBlueBg,
                         iconTintColor = ActionIconBlueTint,
-                        title = "Bensin Checkpoint",
-                        subtitle = "Catat KM Terkini",
+                        title = stringResource(R.string.checkpoint),
+                        subtitle = stringResource(R.string.new_checkpoint),
                         onClick = { showCheckpointSheet = true }
                     )
                 } else {
@@ -412,14 +442,14 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Bensin Checkpoint",
+                                    text = stringResource(R.string.checkpoint),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextDarkNavy
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Isi bensin dulu untuk mengaktifkan",
+                                    text = stringResource(R.string.checkpoint_disabled_hint),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = SubtitleGray
@@ -476,7 +506,7 @@ fun HomeScreen(
 @Composable
 fun RefuelBottomSheet(
     onDismiss: () -> Unit,
-    onSave: (odometerKm: Int, nominalRupiah: Double, timestamp: Long) -> Unit
+    onSave: (odometerKm: Double, nominalRupiah: Double, timestamp: Long) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
@@ -489,7 +519,8 @@ fun RefuelBottomSheet(
     val calendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
 
-    val odometerValid = odometerInput.toIntOrNull() != null && odometerInput.toIntOrNull()!! > 0
+    val odometerValue = odometerInput.parseOdometerToDouble()
+    val odometerValid = odometerValue != null && odometerValue > 0
     val nominalValid = nominalInput.toDoubleOrNull() != null && nominalInput.toDoubleOrNull()!! > 0
     val isValid = odometerValid && nominalValid
 
@@ -515,13 +546,13 @@ fun RefuelBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Isi Bensin Baru",
+                    text = stringResource(R.string.new_refuel),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDarkNavy
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = SubtitleGray)
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = SubtitleGray)
                 }
             }
 
@@ -529,7 +560,7 @@ fun RefuelBottomSheet(
 
             // Timestamp Input
             Text(
-                text = "WAKTU PENGISIAN",
+                text = stringResource(R.string.date_and_time),
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -549,7 +580,7 @@ fun RefuelBottomSheet(
                 ),
                 trailingIcon = {
                     Text(
-                        text = "Ubah",
+                        text = stringResource(R.string.action_change),
                         color = MocareBrandTeal,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
@@ -583,7 +614,7 @@ fun RefuelBottomSheet(
 
             // Nominal Rupiah input
             Text(
-                text = "NOMINAL (RP)",
+                text = stringResource(R.string.nominal_rp),
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -594,9 +625,10 @@ fun RefuelBottomSheet(
             OutlinedTextField(
                 value = nominalInput,
                 onValueChange = { nominalInput = it.filter { c -> c.isDigit() } },
-                placeholder = { Text("Contoh: 15000", color = SubtitleGray) },
+                placeholder = { Text(stringResource(R.string.hint_nominal_example), color = SubtitleGray) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = CurrencyVisualTransformation(),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MocareBrandTeal,
@@ -609,7 +641,11 @@ fun RefuelBottomSheet(
             if (calculatedLiters > 0) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Anda telah mengisi ±${String.format(Locale("id", "ID"), "%.2f", calculatedLiters)} liter Pertamax.",
+                    text = stringResource(
+                        R.string.refuel_liters_estimate,
+                        String.format(Locale("id", "ID"), "%.2f", calculatedLiters),
+                        VehicleConfig.FUEL_TYPE
+                    ),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = MileageGreen
@@ -620,7 +656,7 @@ fun RefuelBottomSheet(
 
             // Odometer input
             Text(
-                text = "KM MOTOR SAAT INI",
+                text = stringResource(R.string.current_odometer_km),
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -631,9 +667,10 @@ fun RefuelBottomSheet(
             OutlinedTextField(
                 value = odometerInput,
                 onValueChange = { odometerInput = it.filter { c -> c.isDigit() } },
-                placeholder = { Text("Contoh: 12500", color = SubtitleGray) },
-                singleLine = true,
+                placeholder = { Text(stringResource(R.string.hint_odometer_example), color = SubtitleGray) },
+                isError = !odometerValid && odometerInput.isNotEmpty(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = com.mocare.app.ui.util.OdometerVisualTransformation(),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MocareBrandTeal,
@@ -648,7 +685,7 @@ fun RefuelBottomSheet(
             // Save button
             Button(
                 onClick = {
-                    val km = odometerInput.toIntOrNull() ?: return@Button
+                    val km = odometerInput.parseOdometerToDouble() ?: return@Button
                     val nominal = nominalInput.toDoubleOrNull() ?: return@Button
                     onSave(km, nominal, selectedTimestamp)
                 },
@@ -663,7 +700,7 @@ fun RefuelBottomSheet(
                 )
             ) {
                 Text(
-                    text = "Simpan",
+                    text = stringResource(R.string.save),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -704,29 +741,29 @@ fun FuelInfoBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Bensin yang Anda Pakai",
+                    text = stringResource(R.string.fuel_info_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDarkNavy
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = SubtitleGray)
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = SubtitleGray)
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            FuelInfoRow("JENIS BENSIN", VehicleConfig.FUEL_TYPE)
+            FuelInfoRow(stringResource(R.string.fuel_type), VehicleConfig.FUEL_TYPE)
             Spacer(modifier = Modifier.height(14.dp))
-            FuelInfoRow("RON", "${VehicleConfig.FUEL_RON}")
+            FuelInfoRow(stringResource(R.string.label_ron), "${VehicleConfig.FUEL_RON}")
             Spacer(modifier = Modifier.height(14.dp))
-            FuelInfoRow("HARGA PER LITER", "Rp${priceFormat.format(VehicleConfig.FUEL_PRICE_PER_LITER.toInt())}")
+            FuelInfoRow(stringResource(R.string.fuel_price), "${stringResource(R.string.rp)}${priceFormat.format(VehicleConfig.FUEL_PRICE_PER_LITER.toInt())}")
             Spacer(modifier = Modifier.height(14.dp))
-            FuelInfoRow("KAPASITAS TANGKI", "${VehicleConfig.TANK_CAPACITY_LITERS} L")
+            FuelInfoRow(stringResource(R.string.max_fuel_tank_capacity), "${VehicleConfig.TANK_CAPACITY_LITERS} ${stringResource(R.string.liters)}")
             Spacer(modifier = Modifier.height(14.dp))
-            FuelInfoRow("ESTIMASI FULL TANK", "Rp${priceFormat.format(fullTankCost.toInt())}")
+            FuelInfoRow(stringResource(R.string.est_full_tank_cost), "${stringResource(R.string.rp)}${priceFormat.format(fullTankCost.toInt())}")
             Spacer(modifier = Modifier.height(14.dp))
-            FuelInfoRow("ESTIMASI JARAK FULL", "$estRange KM")
+            FuelInfoRow(stringResource(R.string.est_full_tank_range), "$estRange ${stringResource(R.string.km)}")
         }
     }
 }
@@ -758,15 +795,19 @@ private fun FuelInfoRow(label: String, value: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckpointBottomSheet(
-    lastOdometerKm: Int,
+    lastOdometerKm: Double,
     currentPercent: Int,
     efficiencyKmPerLiter: Double,
     onDismiss: () -> Unit,
-    onSave: (odometerKm: Int, timestamp: Long) -> Unit
+    onSave: (odometerKm: Double, timestamp: Long) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+    val numberFormat = remember { 
+        NumberFormat.getNumberInstance(Locale("id", "ID")).apply {
+            maximumFractionDigits = 1
+        }
+    }
 
     var odometerInput by remember { mutableStateOf("") }
 
@@ -774,13 +815,13 @@ fun CheckpointBottomSheet(
     val calendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
 
-    val odometerValue = odometerInput.toIntOrNull()
+    val odometerValue = odometerInput.parseOdometerToDouble()
     // Odometer tidak bisa mundur: KM baru harus melebihi KM terakhir yang tercatat.
     val isOdometerBackward = odometerValue != null && odometerValue <= lastOdometerKm
     val isValid = odometerValue != null && !isOdometerBackward
 
     // Preview sisa bensin: murni derived dari jarak tempuh dibagi efisiensi.
-    val distanceKm = if (isValid) odometerValue!! - lastOdometerKm else 0
+    val distanceKm = if (isValid) odometerValue!! - lastOdometerKm else 0.0
     val litersUsed = if (efficiencyKmPerLiter > 0) distanceKm / efficiencyKmPerLiter else 0.0
     val currentLiters = (currentPercent.coerceAtLeast(0) / 100.0) * VehicleConfig.TANK_CAPACITY_LITERS
     val projectedLiters = (currentLiters - litersUsed).coerceIn(0.0, VehicleConfig.TANK_CAPACITY_LITERS)
@@ -805,20 +846,20 @@ fun CheckpointBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Bensin Checkpoint",
+                    text = stringResource(R.string.checkpoint),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDarkNavy
                 )
                 IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = SubtitleGray)
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = SubtitleGray)
                 }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Catat angka odometer motor Anda saat ini. Sisa bensin dihitung otomatis dari jarak tempuh.",
+                text = stringResource(R.string.checkpoint_description),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = SubtitleGray
@@ -828,7 +869,7 @@ fun CheckpointBottomSheet(
 
             // Waktu checkpoint
             Text(
-                text = "WAKTU CHECKPOINT",
+                text = stringResource(R.string.date_and_time),
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -848,7 +889,7 @@ fun CheckpointBottomSheet(
                 ),
                 trailingIcon = {
                     Text(
-                        text = "Ubah",
+                        text = stringResource(R.string.action_change),
                         color = MocareBrandTeal,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
@@ -882,7 +923,7 @@ fun CheckpointBottomSheet(
 
             // Odometer input
             Text(
-                text = "KM MOTOR SAAT INI",
+                text = stringResource(R.string.current_odometer_km),
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
@@ -894,11 +935,12 @@ fun CheckpointBottomSheet(
                 value = odometerInput,
                 onValueChange = { odometerInput = it.filter { c -> c.isDigit() } },
                 placeholder = {
-                    Text("Lebih dari ${numberFormat.format(lastOdometerKm)}", color = SubtitleGray)
+                    Text(stringResource(R.string.hint_odometer_greater_than, numberFormat.format(lastOdometerKm)), color = SubtitleGray)
                 },
                 singleLine = true,
                 isError = isOdometerBackward,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = com.mocare.app.ui.util.OdometerVisualTransformation(),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MocareBrandTeal,
@@ -914,8 +956,10 @@ fun CheckpointBottomSheet(
             when {
                 isOdometerBackward -> {
                     Text(
-                        text = "KM tidak boleh lebih kecil atau sama dengan catatan terakhir " +
-                            "(${numberFormat.format(lastOdometerKm)} KM).",
+                        text = stringResource(
+                            R.string.error_odometer_backward,
+                            numberFormat.format(lastOdometerKm)
+                        ),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = FuelRed
@@ -923,7 +967,10 @@ fun CheckpointBottomSheet(
                 }
                 isValid -> {
                     Text(
-                        text = "Jarak tempuh +${numberFormat.format(distanceKm)} KM sejak catatan terakhir.",
+                        text = stringResource(
+                            R.string.checkpoint_distance_info,
+                            numberFormat.format(distanceKm)
+                        ),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MileageGreen
@@ -931,7 +978,10 @@ fun CheckpointBottomSheet(
                 }
                 else -> {
                     Text(
-                        text = "Catatan terakhir: ${numberFormat.format(lastOdometerKm)} KM",
+                        text = stringResource(
+                            R.string.last_record_info,
+                            numberFormat.format(lastOdometerKm)
+                        ),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = SubtitleGray
@@ -957,7 +1007,7 @@ fun CheckpointBottomSheet(
                     ) {
                         Column {
                             Text(
-                                text = "ESTIMASI SISA BENSIN",
+                                text = stringResource(R.string.projected_fuel_left),
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
@@ -974,7 +1024,7 @@ fun CheckpointBottomSheet(
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "Est. $projectedRangeKm KM left",
+                                text = stringResource(R.string.est_range_left, projectedRangeKm.toString()),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = fuelColor(projectedPercent)
@@ -982,7 +1032,7 @@ fun CheckpointBottomSheet(
                             if (projectedPercent == 0) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Segera isi bensin!",
+                                    text = stringResource(R.string.refuel_soon),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FuelRed
@@ -997,7 +1047,7 @@ fun CheckpointBottomSheet(
 
             Button(
                 onClick = {
-                    val km = odometerInput.toIntOrNull() ?: return@Button
+                    val km = odometerInput.parseOdometerToDouble() ?: return@Button
                     onSave(km, selectedTimestamp)
                 },
                 enabled = isValid,
@@ -1011,7 +1061,7 @@ fun CheckpointBottomSheet(
                 )
             ) {
                 Text(
-                    text = "Simpan",
+                    text = stringResource(R.string.save),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1091,6 +1141,7 @@ fun ActionCardItem(
 fun MocareBottomNavigationBar(
     currentRoute: String = "home",
     onNavigateHome: () -> Unit = {},
+    onNavigateStats: () -> Unit = {},
     onNavigateHistory: () -> Unit = {}
 ) {
     Surface(
@@ -1118,13 +1169,13 @@ fun MocareBottomNavigationBar(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.LocalGasStation,
-                        contentDescription = "Refuel",
+                        contentDescription = stringResource(R.string.cd_refuel_nav),
                         tint = if (isHome) BottomNavActiveContent else BottomNavInactiveContent,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Refuel",
+                        text = stringResource(R.string.nav_refuel),
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = if (isHome) FontWeight.Bold else FontWeight.SemiBold,
@@ -1133,25 +1184,32 @@ fun MocareBottomNavigationBar(
                 }
             }
 
-            // Stats Menu (Disabled placeholder)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).alpha(0.5f)
+            // Stats Menu
+            val isStats = currentRoute == "stats"
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { if (!isStats) onNavigateStats() }
             ) {
-                Icon(
-                    imageVector = Icons.Default.TrendingUp,
-                    contentDescription = "Stats",
-                    tint = BottomNavInactiveContent,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Stats",
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BottomNavInactiveContent
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TrendingUp,
+                        contentDescription = stringResource(R.string.cd_stats_nav),
+                        tint = if (isStats) BottomNavActiveContent else BottomNavInactiveContent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.nav_stats),
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isStats) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isStats) BottomNavActiveContent else BottomNavInactiveContent
+                    )
+                }
             }
 
             // History Menu
@@ -1166,13 +1224,13 @@ fun MocareBottomNavigationBar(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.History,
-                        contentDescription = "History",
+                        contentDescription = stringResource(R.string.cd_history_nav),
                         tint = if (isHistory) BottomNavActiveContent else BottomNavInactiveContent,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "History",
+                        text = stringResource(R.string.nav_history),
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = if (isHistory) FontWeight.Bold else FontWeight.SemiBold,

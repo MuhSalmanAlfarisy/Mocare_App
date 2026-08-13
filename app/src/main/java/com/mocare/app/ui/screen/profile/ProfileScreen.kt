@@ -38,10 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import com.mocare.app.R
 import com.mocare.app.data.VehicleConfig
 import com.mocare.app.ui.screen.home.MocareBottomNavigationBar
 import com.mocare.app.ui.theme.ActionIconGreenBg
@@ -55,6 +59,9 @@ import com.mocare.app.ui.theme.PageBackground
 import com.mocare.app.ui.theme.SubtitleGray
 import com.mocare.app.ui.theme.TextDarkNavy
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit = {}
@@ -81,14 +88,14 @@ fun ProfileScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.cd_back),
                         tint = TextDarkNavy,
                         modifier = Modifier.size(24.dp)
                     )
                 }
 
                 Text(
-                    text = "MOCARE",
+                    text = stringResource(R.string.app_name).uppercase(),
                     fontSize = 15.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -158,53 +165,53 @@ fun ProfileScreen(
             ) {
                 // 1. BRAND
                 SpecCardItem(
-                    label = "BRAND",
+                    label = stringResource(R.string.brand),
                     value = VehicleConfig.BRAND,
                     icon = Icons.Default.Apartment
                 )
 
                 // 2. MODEL
                 SpecCardItem(
-                    label = "MODEL",
+                    label = stringResource(R.string.model),
                     value = VehicleConfig.MODEL,
                     icon = Icons.Default.TwoWheeler
                 )
 
                 // 3. ENGINE CAPACITY
                 SpecCardItem(
-                    label = "ENGINE CAPACITY",
+                    label = stringResource(R.string.engine_capacity),
                     value = "${VehicleConfig.ENGINE_CC}",
-                    unit = "cc",
+                    unit = stringResource(R.string.cc),
                     icon = Icons.Default.Settings
                 )
 
                 // 4. TRANSMISSION
                 SpecCardItem(
-                    label = "TRANSMISSION",
-                    value = "Auto / V-Matic",
+                    label = stringResource(R.string.transmission),
+                    value = stringResource(R.string.auto_v_matic),
                     icon = Icons.Default.Speed
                 )
 
                 // 5. REF. FUEL ECONOMY
                 SpecCardItem(
-                    label = "REF. FUEL ECONOMY",
+                    label = stringResource(R.string.ref_fuel_economy),
                     value = "${VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER.toInt()}",
-                    unit = "km/L",
+                    unit = stringResource(R.string.km_per_liter),
                     icon = Icons.Default.Eco
                 )
 
                 // 6. FUEL TYPE
                 SpecCardItem(
-                    label = "FUEL TYPE",
+                    label = stringResource(R.string.fuel_type),
                     value = "${VehicleConfig.FUEL_TYPE} (RON ${VehicleConfig.FUEL_RON})",
                     icon = Icons.Default.LocalGasStation
                 )
 
                 // 7. FUEL PRICE
                 SpecCardItem(
-                    label = "FUEL PRICE",
-                    value = "Rp${java.text.NumberFormat.getNumberInstance(java.util.Locale("id", "ID")).format(VehicleConfig.FUEL_PRICE_PER_LITER.toInt())}",
-                    unit = "/L",
+                    label = stringResource(R.string.fuel_price),
+                    value = "${stringResource(R.string.rp)}${java.text.NumberFormat.getNumberInstance(java.util.Locale("id", "ID")).format(VehicleConfig.FUEL_PRICE_PER_LITER.toInt())}",
+                    unit = stringResource(R.string.per_liter),
                     icon = Icons.Default.Info
                 )
 
@@ -225,7 +232,7 @@ fun ProfileScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "MAX FUEL TANK CAPACITY",
+                                    text = stringResource(R.string.max_fuel_tank_capacity),
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,
@@ -250,7 +257,7 @@ fun ProfileScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "L",
+                                    text = stringResource(R.string.liters),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextDarkNavy,
@@ -259,7 +266,7 @@ fun ProfileScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Used for range calculations",
+                                text = stringResource(R.string.used_for_range_calculations),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = SubtitleGray
@@ -285,6 +292,73 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            
+            // Language Switcher Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, CardBorderColor)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.language),
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        color = HeaderLabelGray
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // English Button
+                        val isEn = AppCompatDelegate.getApplicationLocales().toLanguageTags().contains("en") || 
+                                   (AppCompatDelegate.getApplicationLocales().isEmpty && java.util.Locale.getDefault().language == "en")
+                        
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (isEn) ActionIconGreenBg else Color(0xFFEFF3F8)),
+                            onClick = { 
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
+                            }
+                        ) {
+                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                                Text(stringResource(R.string.english), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isEn) Color.White else TextDarkNavy)
+                            }
+                        }
+                        
+                        // Indonesian Button
+                        val isId = AppCompatDelegate.getApplicationLocales().toLanguageTags().contains("id") || 
+                                   (AppCompatDelegate.getApplicationLocales().isEmpty && java.util.Locale.getDefault().language == "id")
+                                   
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (isId) ActionIconGreenBg else Color(0xFFEFF3F8)),
+                            onClick = { 
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("id"))
+                            }
+                        ) {
+                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                                Text(stringResource(R.string.bahasa_indonesia), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isId) Color.White else TextDarkNavy)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

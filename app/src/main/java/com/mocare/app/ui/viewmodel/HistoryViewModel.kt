@@ -15,16 +15,16 @@ sealed class HistoryItem {
 
     data class Refuel(
         override val timestamp: Long,
-        val odometerKm: Int,
+        val odometerKm: Double,
         val liters: Double,
         val totalCost: Double
     ) : HistoryItem()
 
     data class Checkpoint(
         override val timestamp: Long,
-        val odometerKm: Int,
+        val odometerKm: Double,
         /** Jarak tempuh sejak event sebelumnya. 0 bila ini event pertama. */
-        val distanceSinceLastKm: Int
+        val distanceSinceLastKm: Double
     ) : HistoryItem()
 }
 
@@ -75,8 +75,8 @@ class HistoryViewModel(private val fuelRepository: FuelRepository) : ViewModel()
                                 timestamp = event.timestamp,
                                 odometerKm = event.odometerKm,
                                 distanceSinceLastKm = previousOdometer
-                                    ?.let { (event.odometerKm - it).coerceAtLeast(0) }
-                                    ?: 0
+                                    ?.let { (event.odometerKm - it).coerceAtLeast(0.0) }
+                                    ?: 0.0
                             )
                         }
                     }

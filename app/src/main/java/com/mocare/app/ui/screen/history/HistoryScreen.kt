@@ -55,11 +55,14 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.mocare.app.R
 
 @Composable
 fun HistoryScreen(
     viewModel: HistoryViewModel = koinViewModel(),
-    onNavigateHome: () -> Unit = {}
+    onNavigateHome: () -> Unit = {},
+    onNavigateStats: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -68,7 +71,8 @@ fun HistoryScreen(
         bottomBar = { 
             MocareBottomNavigationBar(
                 currentRoute = "history",
-                onNavigateHome = onNavigateHome
+                onNavigateHome = onNavigateHome,
+                onNavigateStats = onNavigateStats
             )
         }
     ) { innerPadding ->
@@ -86,7 +90,7 @@ fun HistoryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "HISTORY",
+                    text = stringResource(R.string.history),
                     fontSize = 15.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -101,7 +105,7 @@ fun HistoryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Belum ada riwayat aktivitas",
+                        text = stringResource(R.string.no_history_activity),
                         fontSize = 14.sp,
                         color = SubtitleGray
                     )
@@ -160,7 +164,7 @@ fun HistoryCard(item: HistoryItem) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Isi Bensin",
+                            text = stringResource(R.string.item_refuel),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextDarkNavy
@@ -175,13 +179,13 @@ fun HistoryCard(item: HistoryItem) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Rp${priceFormat.format(item.totalCost.toInt())}",
+                                text = "${stringResource(R.string.rp)}${priceFormat.format(item.totalCost.toInt())}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MileageGreen
                             )
                             Text(
-                                text = " • ${kmFormat.format(item.odometerKm)} KM",
+                                text = " \u2022 ${kmFormat.format(item.odometerKm)} ${stringResource(R.string.km)}",
                                 fontSize = 12.sp,
                                 color = HeaderLabelGray
                             )
@@ -207,7 +211,7 @@ fun HistoryCard(item: HistoryItem) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Bensin Checkpoint",
+                            text = stringResource(R.string.item_checkpoint),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextDarkNavy
@@ -222,14 +226,14 @@ fun HistoryCard(item: HistoryItem) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${kmFormat.format(item.odometerKm)} KM",
+                                text = "${kmFormat.format(item.odometerKm)} ${stringResource(R.string.km)}",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ActionIconBlueTint
                             )
                             if (item.distanceSinceLastKm > 0) {
                                 Text(
-                                    text = " • +${kmFormat.format(item.distanceSinceLastKm)} KM sejak terakhir",
+                                    text = " \u2022 " + stringResource(R.string.since_last_km, kmFormat.format(item.distanceSinceLastKm)),
                                     fontSize = 12.sp,
                                     color = HeaderLabelGray
                                 )

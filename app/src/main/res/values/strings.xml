@@ -1,3 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mocare</string>
+
+    <!-- ===== Content Descriptions (a11y) ===== -->
+    <string name="cd_profile">Profile</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_refuel_nav">Refuel menu</string>
+    <string name="cd_stats_nav">Stats menu</string>
+    <string name="cd_history_nav">History menu</string>
+
+    <!-- ===== Bottom Navigation ===== -->
+    <string name="nav_refuel">Refuel</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_history">History</string>
+
+    <!-- ===== Home: Mileage Card ===== -->
+    <string name="current_mileage">CURRENT MILEAGE</string>
+    <string name="km">KM</string>
+
+    <!-- ===== Home: Fuel Level Card ===== -->
+    <string name="fuel_level">FUEL LEVEL</string>
+    <string name="empty">EMPTY</string>
+    <string name="no_data">No Data</string>
+    <string name="est_range_left">Est. %1$s KM left</string>
+
+    <!-- ===== Home: Action Cards ===== -->
+    <string name="new_refuel">New Refuel</string>
+    <string name="action_refuel_subtitle">+ Log a fuel purchase</string>
+    <string name="fuel_info_title">Your Fuel</string>
+    <string name="checkpoint">Checkpoint</string>
+    <string name="new_checkpoint">Log current odometer</string>
+    <string name="checkpoint_disabled_hint">Add a refuel first to enable</string>
+
+    <!-- ===== Shared Form Labels ===== -->
+    <string name="date_and_time">DATE &amp; TIME</string>
+    <string name="action_change">Change</string>
+    <string name="nominal_rp">NOMINAL (RP)</string>
+    <string name="hint_nominal_example">e.g. 15000</string>
+    <string name="current_odometer_km">CURRENT ODOMETER (KM)</string>
+    <string name="hint_odometer_example">e.g. 12500.5</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- ===== Refuel Sheet ===== -->
+    <string name="refuel_liters_estimate">You refueled approx. %1$s liters of %2$s.</string>
+
+    <!-- ===== Fuel Info Sheet ===== -->
+    <string name="fuel_type">FUEL TYPE</string>
+    <string name="label_ron">RON</string>
+    <string name="fuel_price">FUEL PRICE</string>
+    <string name="max_fuel_tank_capacity">MAX FUEL TANK CAPACITY</string>
+    <string name="est_full_tank_cost">EST. FULL TANK COST</string>
+    <string name="est_full_tank_range">EST. FULL TANK RANGE</string>
+
+    <!-- ===== Checkpoint Sheet ===== -->
+    <string name="checkpoint_description">Record your current odometer reading. Remaining fuel is calculated automatically from the distance traveled.</string>
+    <string name="hint_odometer_greater_than">More than %1$s</string>
+    <string name="error_odometer_backward">Odometer cannot be lower than or equal to the last record (%1$s KM).</string>
+    <string name="checkpoint_distance_info">Distance traveled +%1$s KM since the last record.</string>
+    <string name="last_record_info">Last record: %1$s KM</string>
+    <string name="projected_fuel_left">ESTIMATED FUEL LEFT</string>
+    <string name="refuel_soon">Refuel soon!</string>
+
+    <!-- ===== History ===== -->
+    <string name="history">HISTORY</string>
+    <string name="no_history_activity">No recent activity</string>
+    <string name="item_refuel">Refuel</string>
+    <string name="item_checkpoint">Fuel Checkpoint</string>
+    <string name="since_last_km">+%1$s KM since last</string>
+
+    <!-- ===== Stats ===== -->
+    <string name="stats">STATS</string>
+    <string name="today">Today</string>
+    <string name="this_week">This Week</string>
+    <string name="this_month">This Month</string>
+    <string name="not_enough_data">Not enough data for this period</string>
+    <string name="fuel_analysis">Fuel Analysis</string>
+    <string name="total_volume">Total Volume</string>
+    <string name="total_cost">Total Cost</string>
+    <string name="insight_refill_habit">You typically refuel when your tank hits %1$s%%. Pushing this slightly lower could save you an extra trip to the station.</string>
+    <string name="riding_patterns">Riding Patterns</string>
+    <string name="distance_traveled">Distance Traveled</string>
+    <string name="avg_daily">Avg Daily</string>
+    <string name="fuel_economy">Fuel Economy</string>
+    <string name="behavioral_insights">Behavioral Insights</string>
+    <string name="refill_frequency">Refill Frequency</string>
+    <string name="every_day">Every day</string>
+    <string name="once_every_n_days">Once every %1$d days</string>
+    <string name="efficiency_trend">Efficiency Trend</string>
+    <string name="you_are_trend_than_last_period">You are %1$s than last period.</string>
+    <string name="n_percent_more_efficient">%1$s%% more efficient</string>
+    <string name="n_percent_less_efficient">%1$s%% less efficient</string>
+
+    <!-- ===== Profile ===== -->
+    <string name="brand">BRAND</string>
+    <string name="model">MODEL</string>
+    <string name="engine_capacity">ENGINE CAPACITY</string>
+    <string name="transmission">TRANSMISSION</string>
+    <string name="auto_v_matic">Auto / V-Matic</string>
+    <string name="ref_fuel_economy">REF. FUEL ECONOMY</string>
+    <string name="used_for_range_calculations">Used for range calculations</string>
+    <string name="language">LANGUAGE / BAHASA</string>
+    <string name="english">English</string>
+    <string name="bahasa_indonesia">Bahasa Indonesia</string>
+
+    <!-- ===== Units (non-translatable) ===== -->
+    <string name="liters" translatable="false">L</string>
+    <string name="k_rp" translatable="false">k</string>
+    <string name="rp" translatable="false">Rp</string>
+    <string name="cc" translatable="false">cc</string>
+    <string name="km_per_liter" translatable="false">km/L</string>
+    <string name="per_liter" translatable="false">/L</string>
 </resources>

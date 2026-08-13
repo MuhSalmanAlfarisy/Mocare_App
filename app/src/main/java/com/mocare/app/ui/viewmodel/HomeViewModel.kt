@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
-    val currentOdometerKm: Int = 0,
+    val currentOdometerKm: Double = 0.0,
     val fuelLevelPercent: Int = -1,      // -1 = No Data / Empty
     val estimatedRangeKm: Int = 0,
     val efficiencyKmPerLiter: Double = VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER,
@@ -55,7 +55,7 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
         }
     }
 
-    fun saveRefuelRecord(odometerKm: Int, nominalRupiah: Double, timestamp: Long) {
+    fun saveRefuelRecord(odometerKm: Double, nominalRupiah: Double, timestamp: Long) {
         viewModelScope.launch {
             val addedLiters = nominalRupiah / VehicleConfig.FUEL_PRICE_PER_LITER
 
@@ -74,7 +74,7 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
     }
 
     /** Checkpoint hanya mencatat angka odometer terkini. */
-    fun saveFuelCheckpoint(odometerKm: Int, timestamp: Long = System.currentTimeMillis()) {
+    fun saveFuelCheckpoint(odometerKm: Double, timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             fuelRepository.insertCheckpoint(
                 FuelCheckpointEntity(

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Daftar locale yang didukung aplikasi.
+  Wajib ada agar AppCompatDelegate.setApplicationLocales() diterima oleh
+  framework per-app language (Android 13+) dan agar bahasa muncul di
+  Settings > Apps > Mocare > Language.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="id" />
+</locale-config>

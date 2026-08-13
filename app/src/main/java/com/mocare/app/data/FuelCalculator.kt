@@ -10,18 +10,18 @@ import kotlin.math.roundToInt
  */
 sealed class FuelEvent {
     abstract val timestamp: Long
-    abstract val odometerKm: Int
+    abstract val odometerKm: Double
 
     data class Refuel(
         override val timestamp: Long,
-        override val odometerKm: Int,
+        override val odometerKm: Double,
         val liters: Double,
         val totalCost: Double
     ) : FuelEvent()
 
     data class Checkpoint(
         override val timestamp: Long,
-        override val odometerKm: Int
+        override val odometerKm: Double
     ) : FuelEvent()
 }
 
@@ -35,7 +35,7 @@ sealed class FuelEvent {
  *   false jika masih memakai nilai fallback [VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER].
  */
 data class FuelState(
-    val currentOdometerKm: Int = 0,
+    val currentOdometerKm: Double = 0.0,
     val remainingLiters: Double = 0.0,
     val remainingPercent: Int = -1,
     val estimatedRangeKm: Int = 0,
@@ -103,7 +103,7 @@ object FuelCalculator {
         val efficiency = measured ?: VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER
 
         var liters = 0.0
-        var lastOdometer: Int? = null
+        var lastOdometer: Double? = null
 
         for (event in sorted) {
             lastOdometer?.let { previous ->
@@ -124,7 +124,7 @@ object FuelCalculator {
             .coerceIn(0, 100)
 
         return FuelState(
-            currentOdometerKm = lastOdometer ?: 0,
+            currentOdometerKm = lastOdometer ?: 0.0,
             remainingLiters = liters,
             remainingPercent = percent,
             estimatedRangeKm = (liters * efficiency).roundToInt().coerceAtLeast(0),

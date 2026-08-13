@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mocare</string>
+
+    <!-- ===== Content Descriptions (a11y) ===== -->
+    <string name="cd_profile">Profil</string>
+    <string name="cd_back">Kembali</string>
+    <string name="cd_close">Tutup</string>
+    <string name="cd_refuel_nav">Menu bensin</string>
+    <string name="cd_stats_nav">Menu statistik</string>
+    <string name="cd_history_nav">Menu riwayat</string>
+
+    <!-- ===== Bottom Navigation ===== -->
+    <string name="nav_refuel">Bensin</string>
+    <string name="nav_stats">Statistik</string>
+    <string name="nav_history">Riwayat</string>
+
+    <!-- ===== Home: Mileage Card ===== -->
+    <string name="current_mileage">KM MOTOR SAAT INI</string>
+    <string name="km">KM</string>
+
+    <!-- ===== Home: Fuel Level Card ===== -->
+    <string name="fuel_level">SISA BENSIN</string>
+    <string name="empty">KOSONG</string>
+    <string name="no_data">Belum Ada Data</string>
+    <string name="est_range_left">Est. %1$s KM lagi</string>
+
+    <!-- ===== Home: Action Cards ===== -->
+    <string name="new_refuel">Isi Bensin Baru</string>
+    <string name="action_refuel_subtitle">+ Catat pengisian bensin</string>
+    <string name="fuel_info_title">Bensin yang Anda Pakai</string>
+    <string name="checkpoint">Checkpoint</string>
+    <string name="new_checkpoint">Catat KM terkini</string>
+    <string name="checkpoint_disabled_hint">Isi bensin dulu untuk mengaktifkan</string>
+
+    <!-- ===== Shared Form Labels ===== -->
+    <string name="date_and_time">TANGGAL &amp; WAKTU</string>
+    <string name="action_change">Ubah</string>
+    <string name="nominal_rp">NOMINAL (RP)</string>
+    <string name="hint_nominal_example">Contoh: 15000</string>
+    <string name="current_odometer_km">KM MOTOR SAAT INI</string>
+    <string name="hint_odometer_example">Contoh: 12500.5</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+
+    <!-- ===== Refuel Sheet ===== -->
+    <string name="refuel_liters_estimate">Anda telah mengisi ±%1$s liter %2$s.</string>
+
+    <!-- ===== Fuel Info Sheet ===== -->
+    <string name="fuel_type">JENIS BENSIN</string>
+    <string name="label_ron">RON</string>
+    <string name="fuel_price">HARGA PER LITER</string>
+    <string name="max_fuel_tank_capacity">KAPASITAS TANGKI</string>
+    <string name="est_full_tank_cost">ESTIMASI FULL TANK</string>
+    <string name="est_full_tank_range">ESTIMASI JARAK FULL</string>
+
+    <!-- ===== Checkpoint Sheet ===== -->
+    <string name="checkpoint_description">Catat angka odometer motor Anda saat ini. Sisa bensin dihitung otomatis dari jarak tempuh.</string>
+    <string name="hint_odometer_greater_than">Lebih dari %1$s</string>
+    <string name="error_odometer_backward">KM tidak boleh lebih kecil atau sama dengan catatan terakhir (%1$s KM).</string>
+    <string name="checkpoint_distance_info">Jarak tempuh +%1$s KM sejak catatan terakhir.</string>
+    <string name="last_record_info">Catatan terakhir: %1$s KM</string>
+    <string name="projected_fuel_left">ESTIMASI SISA BENSIN</string>
+    <string name="refuel_soon">Segera isi bensin!</string>
+
+    <!-- ===== History ===== -->
+    <string name="history">RIWAYAT</string>
+    <string name="no_history_activity">Belum ada riwayat aktivitas</string>
+    <string name="item_refuel">Isi Bensin</string>
+    <string name="item_checkpoint">Bensin Checkpoint</string>
+    <string name="since_last_km">+%1$s KM sejak terakhir</string>
+
+    <!-- ===== Stats ===== -->
+    <string name="stats">STATISTIK</string>
+    <string name="today">Hari Ini</string>
+    <string name="this_week">Minggu Ini</string>
+    <string name="this_month">Bulan Ini</string>
+    <string name="not_enough_data">Data belum cukup untuk periode ini</string>
+    <string name="fuel_analysis">Analisis Bensin</string>
+    <string name="total_volume">Total Volume</string>
+    <string name="total_cost">Total Biaya</string>
+    <string name="insight_refill_habit">Anda biasanya mengisi bensin saat tangki tersisa %1$s%%. Menurunkannya sedikit bisa menghemat satu kali perjalanan ke pom bensin.</string>
+    <string name="riding_patterns">Pola Berkendara</string>
+    <string name="distance_traveled">Jarak Tempuh</string>
+    <string name="avg_daily">Rata-rata Harian</string>
+    <string name="fuel_economy">Efisiensi Bensin</string>
+    <string name="behavioral_insights">Insight Kebiasaan</string>
+    <string name="refill_frequency">Frekuensi Isi Bensin</string>
+    <string name="every_day">Setiap hari</string>
+    <string name="once_every_n_days">Sekali tiap %1$d hari</string>
+    <string name="efficiency_trend">Tren Efisiensi</string>
+    <string name="you_are_trend_than_last_period">Anda %1$s dibanding periode lalu.</string>
+    <string name="n_percent_more_efficient">%1$s%% lebih hemat</string>
+    <string name="n_percent_less_efficient">%1$s%% lebih boros</string>
+
+    <!-- ===== Profile ===== -->
+    <string name="brand">MEREK</string>
+    <string name="model">MODEL</string>
+    <string name="engine_capacity">KAPASITAS MESIN</string>
+    <string name="transmission">TRANSMISI</string>
+    <string name="auto_v_matic">Otomatis / V-Matic</string>
+    <string name="ref_fuel_economy">REF. EFISIENSI BENSIN</string>
+    <string name="used_for_range_calculations">Dipakai untuk perhitungan estimasi jarak</string>
+    <string name="language">BAHASA / LANGUAGE</string>
+    <string name="english">English</string>
+    <string name="bahasa_indonesia">Bahasa Indonesia</string>
+</resources>

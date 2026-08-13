@@ -15,7 +15,12 @@ val appModule = module {
             MocareDatabase::class.java,
             "mocare_db"
         )
-        .fallbackToDestructiveMigration()
+        // ⚠️ JANGAN gunakan .fallbackToDestructiveMigration() lagi!
+        // Mulai versi 6, setiap perubahan skema WAJIB menggunakan Migration
+        // eksplisit di MocareDatabase.kt. Tanpa fallback destructive, Room
+        // akan throw IllegalStateException jika ada versi baru tanpa
+        // Migration — sehingga bug migrasi terdeteksi saat development,
+        // bukan diam-diam menghapus data user di production.
         .build()
     }
 
@@ -23,4 +28,5 @@ val appModule = module {
     single { FuelRepository(get()) }
     viewModel { HomeViewModel(get()) }
     viewModel { com.mocare.app.ui.viewmodel.HistoryViewModel(get()) }
+    viewModel { com.mocare.app.ui.viewmodel.StatsViewModel(get()) }
 }
