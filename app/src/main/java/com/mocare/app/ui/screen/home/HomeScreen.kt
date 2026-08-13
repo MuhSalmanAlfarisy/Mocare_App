@@ -41,15 +41,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -379,7 +376,7 @@ fun HomeScreen(
                         iconBgColor = ActionIconBlueBg,
                         iconTintColor = ActionIconBlueTint,
                         title = "Bensin Checkpoint",
-                        subtitle = "Mark Fuel Level",
+                        subtitle = "Catat KM Terkini",
                         onClick = { showCheckpointSheet = true }
                     )
                 } else {
@@ -460,10 +457,12 @@ fun HomeScreen(
     // 3. Checkpoint Modal
     if (showCheckpointSheet && hasData) {
         CheckpointBottomSheet(
+            lastOdometerKm = uiState.currentOdometerKm,
             currentPercent = uiState.fuelLevelPercent,
+            efficiencyKmPerLiter = uiState.efficiencyKmPerLiter,
             onDismiss = { showCheckpointSheet = false },
-            onSave = { percent ->
-                viewModel.saveFuelCheckpoint(percent)
+            onSave = { odometerKm, timestamp ->
+                viewModel.saveFuelCheckpoint(odometerKm, timestamp)
                 showCheckpointSheet = false
             }
         )
@@ -759,13 +758,34 @@ private fun FuelInfoRow(label: String, value: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckpointBottomSheet(
+    lastOdometerKm: Int,
     currentPercent: Int,
+    efficiencyKmPerLiter: Double,
     onDismiss: () -> Unit,
-    onSave: (percent: Int) -> Unit
+    onSave: (odometerKm: Int, timestamp: Long) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var sliderValue by remember { mutableFloatStateOf(currentPercent.toFloat()) }
-    val displayPercent = sliderValue.toInt()
+    val context = LocalContext.current
+    val numberFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+
+    var odometerInput by remember { mutableStateOf("") }
+
+    var selectedTimestamp by remember { mutableStateOf(System.currentTimeMillis()) }
+    val calendar = Calendar.getInstance().apply { timeInMillis = selectedTimestamp }
+    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
+
+    val odometerValue = odometerInput.toIntOrNull()
+    // Odometer tidak bisa mundur: KM baru harus melebihi KM terakhir yang tercatat.
+    val isOdometerBackward = odometerValue != null && odometerValue <= lastOdometerKm
+    val isValid = odometerValue != null && !isOdometerBackward
+
+    // Preview sisa bensin: murni derived dari jarak tempuh dibagi efisiensi.
+    val distanceKm = if (isValid) odometerValue!! - lastOdometerKm else 0
+    val litersUsed = if (efficiencyKmPerLiter > 0) distanceKm / efficiencyKmPerLiter else 0.0
+    val currentLiters = (currentPercent.coerceAtLeast(0) / 100.0) * VehicleConfig.TANK_CAPACITY_LITERS
+    val projectedLiters = (currentLiters - litersUsed).coerceIn(0.0, VehicleConfig.TANK_CAPACITY_LITERS)
+    val projectedPercent = ((projectedLiters / VehicleConfig.TANK_CAPACITY_LITERS) * 100).toInt().coerceIn(0, 100)
+    val projectedRangeKm = (projectedLiters * efficiencyKmPerLiter).toInt().coerceAtLeast(0)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -795,64 +815,199 @@ fun CheckpointBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Large percentage display
-            Column(
+            Text(
+                text = "Catat angka odometer motor Anda saat ini. Sisa bensin dihitung otomatis dari jarak tempuh.",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = SubtitleGray
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Waktu checkpoint
+            Text(
+                text = "WAKTU CHECKPOINT",
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = HeaderLabelGray
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedTextField(
+                value = dateFormat.format(Date(selectedTimestamp)),
+                onValueChange = {},
+                readOnly = true,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MocareBrandTeal,
+                    unfocusedBorderColor = CardBorderColor
+                ),
+                trailingIcon = {
                     Text(
-                        text = "$displayPercent",
-                        fontSize = 48.sp,
+                        text = "Ubah",
+                        color = MocareBrandTeal,
                         fontWeight = FontWeight.Bold,
-                        color = fuelColor(displayPercent)
-                    )
-                    Text(
-                        text = "%",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = fuelColor(displayPercent),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .clickable {
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        TimePickerDialog(
+                                            context,
+                                            { _, hourOfDay, minute ->
+                                                val newCal = Calendar.getInstance()
+                                                newCal.set(year, month, dayOfMonth, hourOfDay, minute)
+                                                selectedTimestamp = newCal.timeInMillis
+                                            },
+                                            calendar.get(Calendar.HOUR_OF_DAY),
+                                            calendar.get(Calendar.MINUTE),
+                                            true
+                                        ).show()
+                                    },
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }
                     )
                 }
-            }
+            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Slider
-            Slider(
-                value = sliderValue,
-                onValueChange = { sliderValue = it },
-                valueRange = 0f..100f,
-                steps = 19,
-                colors = SliderDefaults.colors(
-                    thumbColor = fuelColor(displayPercent),
-                    activeTrackColor = fuelColor(displayPercent),
-                    inactiveTrackColor = CardBorderColor
+            // Odometer input
+            Text(
+                text = "KM MOTOR SAAT INI",
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = HeaderLabelGray
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedTextField(
+                value = odometerInput,
+                onValueChange = { odometerInput = it.filter { c -> c.isDigit() } },
+                placeholder = {
+                    Text("Lebih dari ${numberFormat.format(lastOdometerKm)}", color = SubtitleGray)
+                },
+                singleLine = true,
+                isError = isOdometerBackward,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MocareBrandTeal,
+                    unfocusedBorderColor = CardBorderColor,
+                    cursorColor = MocareBrandTeal,
+                    errorBorderColor = FuelRed
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = "0%", fontSize = 11.sp, color = SubtitleGray)
-                Text(text = "100%", fontSize = 11.sp, color = SubtitleGray)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            when {
+                isOdometerBackward -> {
+                    Text(
+                        text = "KM tidak boleh lebih kecil atau sama dengan catatan terakhir " +
+                            "(${numberFormat.format(lastOdometerKm)} KM).",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = FuelRed
+                    )
+                }
+                isValid -> {
+                    Text(
+                        text = "Jarak tempuh +${numberFormat.format(distanceKm)} KM sejak catatan terakhir.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MileageGreen
+                    )
+                }
+                else -> {
+                    Text(
+                        text = "Catatan terakhir: ${numberFormat.format(lastOdometerKm)} KM",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = SubtitleGray
+                    )
+                }
+            }
+
+            // Preview hasil kalkulasi
+            if (isValid) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = PageBackground),
+                    border = BorderStroke(1.dp, CardBorderColor)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "ESTIMASI SISA BENSIN",
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp,
+                                color = HeaderLabelGray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$projectedPercent%",
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = fuelColor(projectedPercent)
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Est. $projectedRangeKm KM left",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = fuelColor(projectedPercent)
+                            )
+                            if (projectedPercent == 0) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Segera isi bensin!",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FuelRed
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(
-                onClick = { onSave(displayPercent) },
+                onClick = {
+                    val km = odometerInput.toIntOrNull() ?: return@Button
+                    onSave(km, selectedTimestamp)
+                },
+                enabled = isValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MocareBrandTeal
+                    containerColor = MocareBrandTeal,
+                    disabledContainerColor = CardBorderColor
                 )
             ) {
                 Text(

@@ -8,7 +8,7 @@ import com.mocare.app.data.local.entity.FuelRecordEntity
 
 @Database(
     entities = [FuelRecordEntity::class, FuelCheckpointEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class MocareDatabase : RoomDatabase() {

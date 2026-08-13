@@ -26,4 +26,11 @@ interface FuelRecordDao {
 
     @Query("SELECT * FROM fuel_checkpoints ORDER BY timestamp DESC")
     fun getAllCheckpoints(): Flow<List<FuelCheckpointEntity>>
+
+    // Urutan ascending dibutuhkan untuk rekonstruksi kronologis oleh FuelCalculator.
+    @Query("SELECT * FROM fuel_records ORDER BY timestamp ASC")
+    fun getAllRecordsAsc(): Flow<List<FuelRecordEntity>>
+
+    @Query("SELECT * FROM fuel_checkpoints ORDER BY timestamp ASC")
+    fun getAllCheckpointsAsc(): Flow<List<FuelCheckpointEntity>>
 }

@@ -2,6 +2,8 @@ package com.mocare.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mocare.app.data.FuelCalculator
+import com.mocare.app.data.FuelEvent
 import com.mocare.app.data.VehicleConfig
 import com.mocare.app.data.local.entity.FuelCheckpointEntity
 import com.mocare.app.data.local.entity.FuelRecordEntity
@@ -16,6 +18,8 @@ data class HomeUiState(
     val currentOdometerKm: Int = 0,
     val fuelLevelPercent: Int = -1,      // -1 = No Data / Empty
     val estimatedRangeKm: Int = 0,
+    val efficiencyKmPerLiter: Double = VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER,
+    val isEfficiencyMeasured: Boolean = false,
     val hasRefuelData: Boolean = false,
     val isLoading: Boolean = true
 )
@@ -27,35 +31,24 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            // Seluruh event dibaca (bukan hanya yang terakhir) karena sisa bensin
+            // direkonstruksi dari jarak tempuh sepanjang timeline.
             combine(
-                fuelRepository.getLatestRecord(),
-                fuelRepository.getLatestCheckpoint()
-            ) { latestRecord, latestCheckpoint ->
-                if (latestRecord == null) {
-                    // Belum pernah refuel → No Data
-                    HomeUiState(
-                        currentOdometerKm = 0,
-                        fuelLevelPercent = -1,
-                        estimatedRangeKm = 0,
-                        hasRefuelData = false,
-                        isLoading = false
-                    )
-                } else {
-                    // Sudah pernah refuel
-                    val odometer = latestRecord.odometerKm
-                    val fuelPercent = latestCheckpoint?.fuelLevelPercent ?: 100
-                    val estimatedRange = (fuelPercent / 100.0
-                        * VehicleConfig.TANK_CAPACITY_LITERS
-                        * VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER).toInt()
+                fuelRepository.getAllRecordsAsc(),
+                fuelRepository.getAllCheckpointsAsc()
+            ) { records, checkpoints ->
+                val events = buildFuelEvents(records, checkpoints)
+                val fuel = FuelCalculator.calculate(events)
 
-                    HomeUiState(
-                        currentOdometerKm = odometer,
-                        fuelLevelPercent = fuelPercent,
-                        estimatedRangeKm = estimatedRange,
-                        hasRefuelData = true,
-                        isLoading = false
-                    )
-                }
+                HomeUiState(
+                    currentOdometerKm = fuel.currentOdometerKm,
+                    fuelLevelPercent = if (fuel.hasData) fuel.remainingPercent else -1,
+                    estimatedRangeKm = if (fuel.hasData) fuel.estimatedRangeKm else 0,
+                    efficiencyKmPerLiter = fuel.efficiencyKmPerLiter,
+                    isEfficiencyMeasured = fuel.isEfficiencyMeasured,
+                    hasRefuelData = fuel.hasData,
+                    isLoading = false
+                )
             }.collect { state ->
                 _uiState.value = state
             }
@@ -66,32 +59,50 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
         viewModelScope.launch {
             val addedLiters = nominalRupiah / VehicleConfig.FUEL_PRICE_PER_LITER
 
-            val record = FuelRecordEntity(
-                timestamp = timestamp,
-                odometerKm = odometerKm,
-                liters = addedLiters,
-                pricePerLiter = VehicleConfig.FUEL_PRICE_PER_LITER,
-                totalCost = nominalRupiah
-            )
-            fuelRepository.insertRecord(record)
-            
-            // Calculate new fuel percentage
-            val currentPercent = _uiState.value.fuelLevelPercent.coerceAtLeast(0)
-            val currentLiters = (currentPercent / 100.0) * VehicleConfig.TANK_CAPACITY_LITERS
-            val newLiters = currentLiters + addedLiters
-            val newPercent = ((newLiters / VehicleConfig.TANK_CAPACITY_LITERS) * 100).toInt().coerceAtMost(100)
-
-            fuelRepository.insertCheckpoint(
-                FuelCheckpointEntity(fuelLevelPercent = newPercent, timestamp = timestamp)
+            // Hanya satu record yang ditulis. Tidak ada checkpoint bayangan, sehingga
+            // satu aksi refuel menghasilkan tepat satu entri di History.
+            fuelRepository.insertRecord(
+                FuelRecordEntity(
+                    timestamp = timestamp,
+                    odometerKm = odometerKm,
+                    liters = addedLiters,
+                    pricePerLiter = VehicleConfig.FUEL_PRICE_PER_LITER,
+                    totalCost = nominalRupiah
+                )
             )
         }
     }
 
-    fun saveFuelCheckpoint(percent: Int) {
+    /** Checkpoint hanya mencatat angka odometer terkini. */
+    fun saveFuelCheckpoint(odometerKm: Int, timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             fuelRepository.insertCheckpoint(
-                FuelCheckpointEntity(fuelLevelPercent = percent.coerceIn(0, 100))
+                FuelCheckpointEntity(
+                    timestamp = timestamp,
+                    odometerKm = odometerKm
+                )
             )
         }
+    }
+
+    private fun buildFuelEvents(
+        records: List<FuelRecordEntity>,
+        checkpoints: List<FuelCheckpointEntity>
+    ): List<FuelEvent> {
+        val refuels = records.map {
+            FuelEvent.Refuel(
+                timestamp = it.timestamp,
+                odometerKm = it.odometerKm,
+                liters = it.liters,
+                totalCost = it.totalCost
+            )
+        }
+        val marks = checkpoints.map {
+            FuelEvent.Checkpoint(
+                timestamp = it.timestamp,
+                odometerKm = it.odometerKm
+            )
+        }
+        return refuels + marks
     }
 }

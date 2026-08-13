@@ -220,12 +220,21 @@ fun HistoryCard(item: HistoryItem) {
                             color = SubtitleGray
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Tersisa: ${item.fuelLevelPercent}%",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ActionIconBlueTint
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${kmFormat.format(item.odometerKm)} KM",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ActionIconBlueTint
+                            )
+                            if (item.distanceSinceLastKm > 0) {
+                                Text(
+                                    text = " • +${kmFormat.format(item.distanceSinceLastKm)} KM sejak terakhir",
+                                    fontSize = 12.sp,
+                                    color = HeaderLabelGray
+                                )
+                            }
+                        }
                     }
                 }
             }

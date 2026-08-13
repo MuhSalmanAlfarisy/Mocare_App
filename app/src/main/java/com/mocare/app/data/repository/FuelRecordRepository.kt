@@ -10,6 +10,11 @@ class FuelRepository(private val dao: FuelRecordDao) {
     fun getLatestRecord(): Flow<FuelRecordEntity?> = dao.getLatestRecord()
     fun getAllCheckpoints(): Flow<List<FuelCheckpointEntity>> = dao.getAllCheckpoints()
     fun getLatestCheckpoint(): Flow<FuelCheckpointEntity?> = dao.getLatestCheckpoint()
+
+    // Ascending: dipakai untuk merekonstruksi kondisi bensin secara kronologis.
+    fun getAllRecordsAsc(): Flow<List<FuelRecordEntity>> = dao.getAllRecordsAsc()
+    fun getAllCheckpointsAsc(): Flow<List<FuelCheckpointEntity>> = dao.getAllCheckpointsAsc()
+
     suspend fun insertRecord(record: FuelRecordEntity) = dao.insertRecord(record)
     suspend fun insertCheckpoint(checkpoint: FuelCheckpointEntity) = dao.insertCheckpoint(checkpoint)
 }
