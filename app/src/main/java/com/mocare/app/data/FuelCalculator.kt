@@ -16,7 +16,9 @@ sealed class FuelEvent {
         override val timestamp: Long,
         override val odometerKm: Double,
         val liters: Double,
-        val totalCost: Double
+        val totalCost: Double,
+        val isFullTank: Boolean = false,
+        val isEmptyTank: Boolean = false
     ) : FuelEvent()
 
     data class Checkpoint(
@@ -66,6 +68,7 @@ object FuelCalculator {
     fun measureEfficiency(events: List<FuelEvent>): Double? {
         val refuels = events
             .filterIsInstance<FuelEvent.Refuel>()
+            .filter { it.isFullTank }
             .sortedBy { it.timestamp }
 
         if (refuels.size < 2) return null
@@ -74,7 +77,6 @@ object FuelCalculator {
         for (i in 1 until refuels.size) {
             val distance = refuels[i].odometerKm - refuels[i - 1].odometerKm
             val liters = refuels[i].liters
-            // Abaikan interval tidak masuk akal (odometer mundur / tanpa jarak / liter nol).
             if (distance > 0 && liters > 0.0) {
                 samples += distance / liters
             }
@@ -96,7 +98,13 @@ object FuelCalculator {
      * rentang 0..kapasitas tangki sehingga tidak mungkin negatif maupun melebihi tangki.
      */
     fun calculate(events: List<FuelEvent>): FuelState {
-        val sorted = events.sortedBy { it.timestamp }
+        // Urutkan berdasarkan timestamp. Jika ada Checkpoint dan Refuel di waktu yang sama,
+        // Checkpoint harus diproses lebih dulu agar jarak/konsumsi dihitung sebelum bensin diisi.
+        val sorted = events.sortedWith(
+            compareBy<FuelEvent> { it.timestamp }
+                .thenBy { it is FuelEvent.Refuel }
+        )
+        
         if (sorted.isEmpty()) return FuelState()
 
         val measured = measureEfficiency(sorted)
@@ -112,9 +120,22 @@ object FuelCalculator {
                     liters -= distance / efficiency
                 }
             }
+            
+            // Bensin tidak mungkin negatif. Jika jarak tempuh membuat kalkulasi bensin < 0,
+            // berarti tangki sebenarnya sudah kosong (0). Kita harus me-reset ke 0 SEBELUM
+            // menambah bensin baru, agar bensin yang baru dibeli tidak "dimakan" oleh hutang minus.
+            liters = liters.coerceAtLeast(0.0)
+            
             if (event is FuelEvent.Refuel) {
-                liters += event.liters
+                if (event.isFullTank) {
+                    liters = VehicleConfig.TANK_CAPACITY_LITERS
+                } else if (event.isEmptyTank) {
+                    liters = event.liters
+                } else {
+                    liters += event.liters
+                }
             }
+            
             liters = liters.coerceIn(0.0, VehicleConfig.TANK_CAPACITY_LITERS)
             lastOdometer = event.odometerKm
         }

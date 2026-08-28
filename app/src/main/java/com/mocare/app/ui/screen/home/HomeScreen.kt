@@ -470,8 +470,8 @@ fun HomeScreen(
     if (showRefuelSheet) {
         RefuelBottomSheet(
             onDismiss = { showRefuelSheet = false },
-            onSave = { odometerKm, nominalRupiah, timestamp ->
-                viewModel.saveRefuelRecord(odometerKm, nominalRupiah, timestamp)
+            onSave = { odometerKm, nominalRupiah, isFullTank, isEmptyTank, timestamp ->
+                viewModel.saveRefuelRecord(odometerKm, nominalRupiah, isFullTank, isEmptyTank, timestamp)
                 showRefuelSheet = false
             }
         )
@@ -506,13 +506,15 @@ fun HomeScreen(
 @Composable
 fun RefuelBottomSheet(
     onDismiss: () -> Unit,
-    onSave: (odometerKm: Double, nominalRupiah: Double, timestamp: Long) -> Unit
+    onSave: (odometerKm: Double, nominalRupiah: Double, isFullTank: Boolean, isEmptyTank: Boolean, timestamp: Long) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     
     var odometerInput by remember { mutableStateOf("") }
     var nominalInput by remember { mutableStateOf("") }
+    var isFullTank by remember { mutableStateOf(false) }
+    var isEmptyTank by remember { mutableStateOf(false) }
     
     // Timestamp State
     var selectedTimestamp by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -679,6 +681,84 @@ fun RefuelBottomSheet(
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { 
+                        isFullTank = !isFullTank 
+                        if (isFullTank) isEmptyTank = false
+                    }
+                    .padding(vertical = 4.dp)
+            ) {
+                androidx.compose.material3.Switch(
+                    checked = isFullTank,
+                    onCheckedChange = { 
+                        isFullTank = it 
+                        if (it) isEmptyTank = false
+                    },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = MocareBrandTeal
+                    )
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Isi Full Tank?",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDarkNavy
+                    )
+                    Text(
+                        text = "Mereset bensin ke 100% (kalibrasi atas)",
+                        fontSize = 12.sp,
+                        color = SubtitleGray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { 
+                        isEmptyTank = !isEmptyTank 
+                        if (isEmptyTank) isFullTank = false
+                    }
+                    .padding(vertical = 4.dp)
+            ) {
+                androidx.compose.material3.Switch(
+                    checked = isEmptyTank,
+                    onCheckedChange = { 
+                        isEmptyTank = it 
+                        if (it) isFullTank = false
+                    },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Color(0xFFD32F2F)
+                    )
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Isi dari Tangki Kosong?",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDarkNavy
+                    )
+                    Text(
+                        text = "Membuang sisa bensin gaib (kalibrasi bawah)",
+                        fontSize = 12.sp,
+                        color = SubtitleGray
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -687,7 +767,7 @@ fun RefuelBottomSheet(
                 onClick = {
                     val km = odometerInput.parseOdometerToDouble() ?: return@Button
                     val nominal = nominalInput.toDoubleOrNull() ?: return@Button
-                    onSave(km, nominal, selectedTimestamp)
+                    onSave(km, nominal, isFullTank, isEmptyTank, selectedTimestamp)
                 },
                 enabled = isValid,
                 modifier = Modifier

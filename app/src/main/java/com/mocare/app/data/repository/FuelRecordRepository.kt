@@ -19,6 +19,9 @@ class FuelRepository(private val dao: FuelRecordDao) {
 
     suspend fun insertRecord(record: FuelRecordEntity) = dao.insertRecord(record)
     suspend fun insertCheckpoint(checkpoint: FuelCheckpointEntity) = dao.insertCheckpoint(checkpoint)
+    suspend fun deleteRecordById(id: Long) = dao.deleteRecordById(id)
+    suspend fun deleteDummyFullTank() = dao.deleteDummyFullTank()
+    suspend fun fixPastRecordToEmptyTank() = dao.fixPastRecordToEmptyTank()
 
     fun getAllEventsAsc(): Flow<List<FuelEvent>> {
         return combine(getAllRecordsAsc(), getAllCheckpointsAsc()) { records, checkpoints ->
@@ -27,7 +30,9 @@ class FuelRepository(private val dao: FuelRecordDao) {
                     timestamp = it.timestamp,
                     odometerKm = it.odometerKm,
                     liters = it.liters,
-                    totalCost = it.totalCost
+                    totalCost = it.totalCost,
+                    isFullTank = it.isFullTank,
+                    isEmptyTank = it.isEmptyTank
                 )
             }
             val checkpts = checkpoints.map {

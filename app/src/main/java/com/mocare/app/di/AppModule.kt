@@ -21,6 +21,7 @@ val appModule = module {
         // akan throw IllegalStateException jika ada versi baru tanpa
         // Migration — sehingga bug migrasi terdeteksi saat development,
         // bukan diam-diam menghapus data user di production.
+        .addMigrations(MocareDatabase.MIGRATION_6_7, MocareDatabase.MIGRATION_7_8)
         .build()
     }
 

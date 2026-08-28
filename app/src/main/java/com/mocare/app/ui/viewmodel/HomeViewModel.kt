@@ -31,6 +31,11 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            // Hapus data dummy Rp10.000 yang ditambahkan karena salah instruksi
+            fuelRepository.deleteDummyFullTank()
+            // Ubah otomatis record Rp 12.500 menjadi kalibrasi 0% agar akurat
+            fuelRepository.fixPastRecordToEmptyTank()
+            
             // Seluruh event dibaca (bukan hanya yang terakhir) karena sisa bensin
             // direkonstruksi dari jarak tempuh sepanjang timeline.
             combine(
@@ -55,7 +60,7 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
         }
     }
 
-    fun saveRefuelRecord(odometerKm: Double, nominalRupiah: Double, timestamp: Long) {
+    fun saveRefuelRecord(odometerKm: Double, nominalRupiah: Double, isFullTank: Boolean, isEmptyTank: Boolean, timestamp: Long) {
         viewModelScope.launch {
             val addedLiters = nominalRupiah / VehicleConfig.FUEL_PRICE_PER_LITER
 
@@ -67,7 +72,9 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
                     odometerKm = odometerKm,
                     liters = addedLiters,
                     pricePerLiter = VehicleConfig.FUEL_PRICE_PER_LITER,
-                    totalCost = nominalRupiah
+                    totalCost = nominalRupiah,
+                    isFullTank = isFullTank,
+                    isEmptyTank = isEmptyTank
                 )
             )
         }
@@ -94,7 +101,9 @@ class HomeViewModel(private val fuelRepository: FuelRepository) : ViewModel() {
                 timestamp = it.timestamp,
                 odometerKm = it.odometerKm,
                 liters = it.liters,
-                totalCost = it.totalCost
+                totalCost = it.totalCost,
+                isFullTank = it.isFullTank,
+                isEmptyTank = it.isEmptyTank
             )
         }
         val marks = checkpoints.map {

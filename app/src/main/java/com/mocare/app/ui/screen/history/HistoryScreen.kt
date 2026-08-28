@@ -170,12 +170,46 @@ fun HistoryCard(item: HistoryItem) {
                             color = TextDarkNavy
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = dateFormat.format(Date(item.timestamp)),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = SubtitleGray
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = dateFormat.format(Date(item.timestamp)),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = SubtitleGray
+                            )
+                            
+                            if (item.isFullTank) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MocareBrandTeal.copy(alpha = 0.1f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "FULL TANK",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MocareBrandTeal
+                                    )
+                                }
+                            } else if (item.isEmptyTank) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFE57373).copy(alpha = 0.1f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "ISI DARI KOSONG",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(

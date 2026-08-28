@@ -12,6 +12,15 @@ interface FuelRecordDao {
     @Insert
     suspend fun insertRecord(record: FuelRecordEntity)
 
+    @Query("DELETE FROM fuel_records WHERE id = :id")
+    suspend fun deleteRecordById(id: Long)
+    
+    @Query("DELETE FROM fuel_records WHERE isFullTank = 1 AND totalCost = 10000.0")
+    suspend fun deleteDummyFullTank()
+
+    @Query("UPDATE fuel_records SET isEmptyTank = 1 WHERE totalCost = 12500.0 AND isFullTank = 0")
+    suspend fun fixPastRecordToEmptyTank()
+
     @Insert
     suspend fun insertCheckpoint(checkpoint: FuelCheckpointEntity)
 
