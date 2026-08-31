@@ -11,8 +11,8 @@ class FuelCalculatorTest {
     private val tank = VehicleConfig.TANK_CAPACITY_LITERS
     private val fallbackEfficiency = VehicleConfig.REFERENCE_FUEL_ECONOMY_KM_PER_LITER
 
-    private fun refuel(timestamp: Long, odometerKm: Double, liters: Double) =
-        FuelEvent.Refuel(timestamp, odometerKm, liters, liters * VehicleConfig.FUEL_PRICE_PER_LITER)
+    private fun refuel(timestamp: Long, odometerKm: Double, liters: Double, isFullTank: Boolean = false) =
+        FuelEvent.Refuel(timestamp, odometerKm, liters, liters * VehicleConfig.FUEL_PRICE_PER_LITER, isFullTank = isFullTank)
 
     private fun checkpoint(timestamp: Long, odometerKm: Double) =
         FuelEvent.Checkpoint(timestamp, odometerKm)
@@ -91,14 +91,14 @@ class FuelCalculatorTest {
 
     @Test
     fun `efisiensi belum terukur dengan satu refuel`() {
-        assertNull(FuelCalculator.measureEfficiency(listOf(refuel(1_000L, 380_000.0, 2.0))))
+        assertNull(FuelCalculator.measureEfficiency(listOf(refuel(1_000L, 380_000.0, 2.0, true))))
     }
 
     @Test
     fun `efisiensi terukur dari dua refuel dengan metode tank to tank`() {
         val events = listOf(
-            refuel(1_000L, 380_000.0, 2.0),
-            refuel(2_000L, 380_100.0, 2.0)   // 100 KM / 2 L = 50 km per liter
+            refuel(1_000L, 380_000.0, 2.0, true),
+            refuel(2_000L, 380_100.0, 2.0, true)   // 100 KM / 2 L = 50 km per liter
         )
 
         val measured = FuelCalculator.measureEfficiency(events)
@@ -113,11 +113,11 @@ class FuelCalculatorTest {
     fun `efisiensi merata-ratakan interval terakhir sesuai sample window`() {
         // Interval: 100/2=50, 120/2=60, 80/2=40, 90/2=45
         val events = listOf(
-            refuel(1_000L, 380_000.0, 2.0),
-            refuel(2_000L, 380_100.0, 2.0),
-            refuel(3_000L, 380_220.0, 2.0),
-            refuel(4_000L, 380_300.0, 2.0),
-            refuel(5_000L, 380_390.0, 2.0)
+            refuel(1_000L, 380_000.0, 2.0, true),
+            refuel(2_000L, 380_100.0, 2.0, true),
+            refuel(3_000L, 380_220.0, 2.0, true),
+            refuel(4_000L, 380_300.0, 2.0, true),
+            refuel(5_000L, 380_390.0, 2.0, true)
         )
 
         // Window 3 terakhir: (60 + 40 + 45) / 3 = 48.333...
@@ -131,9 +131,9 @@ class FuelCalculatorTest {
     @Test
     fun `interval dengan odometer mundur diabaikan saat mengukur efisiensi`() {
         val events = listOf(
-            refuel(1_000L, 380_000.0, 2.0),
-            refuel(2_000L, 379_000.0, 2.0),   // odometer mundur, interval tidak valid
-            refuel(3_000L, 379_100.0, 2.0)    // 100 / 2 = 50
+            refuel(1_000L, 380_000.0, 2.0, true),
+            refuel(2_000L, 379_000.0, 2.0, true),   // odometer mundur, interval tidak valid
+            refuel(3_000L, 379_100.0, 2.0, true)    // 100 / 2 = 50
         )
 
         assertEquals(50.0, FuelCalculator.measureEfficiency(events)!!, 0.0001)

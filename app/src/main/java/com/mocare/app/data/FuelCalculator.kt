@@ -68,17 +68,36 @@ object FuelCalculator {
     fun measureEfficiency(events: List<FuelEvent>): Double? {
         val refuels = events
             .filterIsInstance<FuelEvent.Refuel>()
-            .filter { it.isFullTank }
             .sortedBy { it.timestamp }
 
-        if (refuels.size < 2) return null
+        // Temukan indeks refuel yang menjadi "anchor" (Full atau Empty)
+        val anchorIndices = refuels.indices.filter { refuels[it].isFullTank || refuels[it].isEmptyTank }
+
+        if (anchorIndices.size < 2) return null
 
         val samples = mutableListOf<Double>()
-        for (i in 1 until refuels.size) {
-            val distance = refuels[i].odometerKm - refuels[i - 1].odometerKm
-            val liters = refuels[i].liters
-            if (distance > 0 && liters > 0.0) {
-                samples += distance / liters
+        for (i in 1 until anchorIndices.size) {
+            val startIdx = anchorIndices[i - 1]
+            val endIdx = anchorIndices[i]
+
+            val startAnchor = refuels[startIdx]
+            val endAnchor = refuels[endIdx]
+
+            val distance = endAnchor.odometerKm - startAnchor.odometerKm
+            if (distance <= 0) continue
+
+            val fuelAfterStart = if (startAnchor.isFullTank) VehicleConfig.TANK_CAPACITY_LITERS else startAnchor.liters
+            val fuelBeforeEnd = if (endAnchor.isFullTank) VehicleConfig.TANK_CAPACITY_LITERS - endAnchor.liters else 0.0
+
+            var intermediateLiters = 0.0
+            for (j in (startIdx + 1) until endIdx) {
+                intermediateLiters += refuels[j].liters
+            }
+
+            val consumed = fuelAfterStart + intermediateLiters - fuelBeforeEnd
+
+            if (consumed > 0.0) {
+                samples += distance / consumed
             }
         }
 
